@@ -1,20 +1,26 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/lhlyu/request"
+	"math/rand"
+	"time"
 )
 
 func main() {
-	m := map[interface{}]interface{}{
-		2:     1,
-		true:  "xxx",
-		false: true,
-		3.14:  "x",
-		"hel": 1,
+	for i := 0; i < 20; i++ {
+		fmt.Println(GetRandomString(8))
 	}
-	c := request.InterToMap(m)
-	bts, _ := json.Marshal(c)
-	fmt.Println(string(bts))
+
+}
+
+func GetRandomString(length int) string {
+	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	bytes := []byte(str)
+	result := []byte{}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < length; i++ {
+		time.Sleep(time.Nanosecond)
+		result = append(result, bytes[r.Intn(len(bytes))])
+	}
+	return string(result)
 }
