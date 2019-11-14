@@ -1,6 +1,12 @@
 package request
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"log"
+	"mime/multipart"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -27,12 +33,45 @@ func toSmallTitle(s string) string {
 	return s
 }
 
-const (
-	_KV_LINE = iota
-	_QS
-)
+func UploadFile(url string, params map[string]string, nameField, fileName string, file io.Reader) ([]byte, error) {
+	body := new(bytes.Buffer)
+
+	writer := multipart.NewWriter(body)
+
+	formFile, err := writer.CreateFormFile(nameField, fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = io.Copy(formFile, file)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, val := range params {
+		_ = writer.WriteField(key, val)
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	//req.Header.Set("Content-Type","multipart/form-data")
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	return nil, err
+}
+
+
 
 func getStrType(s string) int {
+	if json.Valid([]byte(s)){
+		return _JSON
+	}
 	if strings.Contains(s, ":") {
 		return _KV_LINE
 	} else if strings.Contains(s, "=") {
@@ -41,8 +80,8 @@ func getStrType(s string) int {
 	return -1
 }
 
-func strToMap(s string, strType int) map[string]string {
-	m := make(map[string]string)
+func strToMSI(s string, strType int) MSI {
+	m := make(MSI)
 	switch strType {
 	case _KV_LINE:
 		sArr := strings.Split(s, "\n")
@@ -55,6 +94,13 @@ func strToMap(s string, strType int) map[string]string {
 		for k, v := range values {
 			m[k] = v[0]
 		}
+	case _JSON:
+		if err := json.Unmarshal([]byte(s),&m);err != nil{
+			log.Println(err)
+		}
+
 	}
 	return m
 }
+
+
