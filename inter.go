@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
@@ -39,6 +40,52 @@ func (rq *Request) setUrl(){
 	return
 }
 
+
+func (rq *Request) setHeader(){
+	headers := http.Header{}
+	for k, v := range rq.p.Header {
+		headers.Set(k,v)
+	}
+	rq.r.Header = headers
+	return
+}
+
+func (rq *Request) setCookie(){
+	for _, v := range rq.p.Cookie {
+		rq.r.AddCookie(v)
+	}
+	return
+}
+
+func (rq *Request) setPostData(){
+	return
+}
+
+func (rq *Request) setTransport(){
+	rq.c.Transport = rq.t
+	return
+}
+
+func (rq *Request) setFiles(){
+
+}
+
+func (rq *Request) setBody(){
+	rq.r.Body = ioutil.NopCloser(strings.NewReader(rq.ObjToJson(rq.p.Data)))
+	return
+}
+
+func (rq *Request) ObjToJson(v interface{}) string{
+	if v == nil{
+		return ""
+	}
+	bts,err := json.Marshal(v)
+	if rq.errHandler(err){
+		return ""
+	}
+	return string(bts)
+}
+
 func (rq *Request) handler(f func()){
 	if rq.d{
 		f()
@@ -54,31 +101,6 @@ func (rq *Request) errHandler(err error) bool{
 		}
 	}
 	return false
-}
-
-func (rq *Request) setHeader(){
-	return
-}
-
-func (rq *Request) setCookie(){
-	return
-}
-
-func (rq *Request) setPostData(){
-	return
-}
-
-func (rq *Request) setTransport(){
-	return
-}
-
-func (rq *Request) setFiles(){
-
-}
-
-func (rq *Request) setBody(){
-	rq.r.Body = ioutil.NopCloser(strings.NewReader(""))
-	return
 }
 
 // send request

@@ -22,9 +22,9 @@ type Option struct {
 	Proxy    string      // http://xxx:8081   代理请求地址
 	TimeOut  int         // second
 	Files    []string    // file path
+	Cookie   []*Cookie
 	Param    map[string]string
 	Header   map[string]string
-	Cookie   map[string]string
 	Data     map[string]interface{}
 	FormData map[string]string
 }
@@ -32,7 +32,7 @@ type Option struct {
 type (
 	MSI = map[string]interface{}
 	MSS = map[string]string
-
+	Cookie = http.Cookie
 )
 
 func NewRequest() IRequest {
@@ -59,9 +59,9 @@ func NewRequest() IRequest {
 	p := &Option{
 		Param: make(map[string]string),
 		Header: make(map[string]string),
-		Cookie: make(map[string]string),
 		Data: make(map[string]interface{}),
 		FormData: make(map[string]string),
+		Cookie: make([]*Cookie,0),
 		Files:make([]string,0),
 	}
 	return &Request{

@@ -51,3 +51,18 @@ func toMSS(v interface{}) MSS{
 	}
 	return nil
 }
+
+func toMSI(v interface{}) MSI{
+	tp := reflect.TypeOf(v)
+	switch tp.Kind() {
+	case reflect.Map:
+		switch data := v.(type) {
+		case MSI:
+			return data
+		}
+	case reflect.String:
+		s := v.(string)
+		return  strToMSI(s,getStrType(s))
+	}
+	return nil
+}
