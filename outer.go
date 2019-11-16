@@ -5,40 +5,6 @@ import (
 	"net/http"
 )
 
-type IRequest interface {
-	SetDebug(debug bool) *Request
-	SetBaseUrl(baseUrl string) *Request
-	SetUrl(apiUrl string) *Request
-	SetUrlf(urlFormat string, v ...interface{}) *Request
-	SetMethod(method string) *Request
-
-	SetTimeOut(second int) *Request
-	SetProxy(proxy string) *Request
-	SetParam(v interface{}) *Request
-	SetHeader(v interface{}) *Request
-	SetData(v interface{}) *Request
-	SetFormData(v interface{}) *Request
-	SetFiles(filePaths ...string) *Request
-
-	AddCookies(cookies ...*Cookie) *Request
-	AddParam(k string, v interface{}) *Request
-	AddHeader(k string, v interface{}) *Request
-	AddCookieSimple(k string, v interface{}) *Request
-	AddData(k string, v interface{}) *Request
-	AddFormData(k string, v interface{}) *Request
-	AddFile(filePath string) *Request
-
-	SetTransport(transport *http.Transport) *Request
-	SetRequest(r *http.Request) *Request
-	SetClient(c *http.Client) *Request
-	SetOption(option *Option) *Request
-
-	DoHttp() *response
-	DoGet(apiUrl string, param interface{}) *response
-	DoPost(apiUrl string, data interface{}) *response
-	DoPostForm(apiUrl string, formData interface{}) *response
-}
-
 func (rq *Request) SetDebug(debug bool) *Request {
 	rq.d = debug
 	return rq
@@ -108,7 +74,7 @@ func (rq *Request) AddCookieSimple(k string, v interface{}) *Request {
 	})
 	return rq
 }
-// map | string(query | lines | json)
+
 func (rq *Request) SetData(v interface{}) *Request {
 	rq.p.Data = toMSI(v)
 	return rq
@@ -160,62 +126,31 @@ func (rq *Request) SetOption(option *Option) *Request {
 }
 
 
-func (rq *Request) DoHttp() *response {
-	rq.send()
-	return nil
+func (rq *Request) DoHttp() IResponse {
+	return rq.send()
 }
 
-func (rq *Request) DoGet(apiUrl string, param interface{}) *response {
+func (rq *Request) DoGet(apiUrl string, param interface{}) IResponse {
 	rq.SetMethod(GET)
 	rq.AddHeader(CONTENT_TYPE,APPLICATION_JSON)
 	rq.SetUrl(apiUrl)
 	rq.SetParam(param)
-	rq.send()
-	return nil
+	return rq.send()
 }
 
-func (rq *Request) DoPost(apiUrl string, data interface{}) *response {
+func (rq *Request) DoPost(apiUrl string, data interface{}) IResponse {
 	rq.SetMethod(POST)
 	rq.AddHeader(CONTENT_TYPE,APPLICATION_JSON)
 	rq.SetUrl(apiUrl)
 	rq.SetData(data)
-	rq.send()
-	return nil
+	return rq.send()
 }
 
-func (rq *Request) DoPostForm(apiUrl string, formData interface{}) *response {
+func (rq *Request) DoPostForm(apiUrl string, formData interface{}) IResponse {
 	rq.SetMethod(POST)
 	rq.AddHeader(CONTENT_TYPE,X_WWW_FORM_URLENCODED)
 	rq.SetUrl(apiUrl)
 	rq.SetFormData(formData)
-	rq.send()
-	return nil
+	return rq.send()
 }
 
-// 通用请求
-//func (rq *Request) Ask(method, apiUrl string, option *Option) {
-//	if option == nil {
-//		option = rq.p
-//	}
-//	u, err := rq.Qs(apiUrl, option.Param)
-//	if err != nil {
-//		log.Println(err)
-//		return
-//	}
-//	rq.r.Method = method
-//	rq.r.URL = u
-//	rq.r.Header = InterToHeader(option.Header)
-//
-//	rq.c.Timeout = rq.getDuration(option.TimeOut)
-//
-//	if option.Proxy != "" {
-//		rq.t.Proxy = func(request *http.Request) (i *url.URL, e error) {
-//			return url.Parse(option.Proxy)
-//		}
-//	}
-//
-//	resp, err := rq.c.Do(rq.r)
-//	bts, _ := ioutil.ReadAll(resp.Body)
-//	fmt.Println(string(bts), err)
-//	return
-//}

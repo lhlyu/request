@@ -1,12 +1,8 @@
 package request
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
 	"log"
-	"mime/multipart"
-	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -33,38 +29,37 @@ func toSmallTitle(s string) string {
 	return s
 }
 
-func UploadFile(url string, params map[string]string, nameField, fileName string, file io.Reader) ([]byte, error) {
-	body := new(bytes.Buffer)
-
-	writer := multipart.NewWriter(body)
-
-	formFile, err := writer.CreateFormFile(nameField, fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = io.Copy(formFile, file)
-	if err != nil {
-		return nil, err
-	}
-
-	for key, val := range params {
-		_ = writer.WriteField(key, val)
-	}
-
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", url, body)
-	if err != nil {
-		return nil, err
-	}
-	//req.Header.Set("Content-Type","multipart/form-data")
-	req.Header.Add("Content-Type", writer.FormDataContentType())
-	return nil, err
-}
+//func UploadFile(url string, params map[string]string, nameField, fileName string, file io.Reader) ([]byte, error) {
+//	body := new(bytes.Buffer)
+//
+//	writer := multipart.NewWriter(body)
+//
+//	formFile, err := writer.CreateFormFile(nameField, fileName)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	_, err = io.Copy(formFile, file)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	for key, val := range params {
+//		_ = writer.WriteField(key, val)
+//	}
+//
+//	err = writer.Close()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	req, err := http.NewRequest("POST", url, body)
+//	if err != nil {
+//		return nil, err
+//	}
+//	req.Header.Add("Content-Type", writer.FormDataContentType())
+//	return nil, err
+//}
 
 
 
@@ -86,7 +81,20 @@ func strToMSI(s string, strType int) MSI {
 	case _KV_LINE:
 		sArr := strings.Split(s, "\n")
 		for _, v := range sArr {
-			vArr := strings.SplitN(v, ":", 2)
+			index := strings.Index(v,"//")
+			if index > -1{
+				v = v[:index]
+			}
+			vs := strings.TrimSpace(v)
+			if vs == ""{
+				continue
+			}
+
+
+			vArr := strings.SplitN(vs, ":", 2)
+			if len(vArr) < 2{
+				continue
+			}
 			m[strings.TrimSpace(vArr[0])] = strings.TrimSpace(vArr[1])
 		}
 	case _QS:

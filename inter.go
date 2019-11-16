@@ -1,13 +1,10 @@
 package request
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
@@ -33,20 +30,14 @@ func (rq *Request) setUrl(){
 		uValues.Set(k,v)
 	}
 	uUrl.RawQuery = uValues.Encode()
-	rq.handler(func() {
-		log.Println("requestUrl | ",uUrl.String())
-	})
 	rq.r.URL = uUrl
 	return
 }
 
-
 func (rq *Request) setHeader(){
-	headers := http.Header{}
 	for k, v := range rq.p.Header {
-		headers.Set(k,v)
+		rq.r.Header.Set(k,v)
 	}
-	rq.r.Header = headers
 	return
 }
 
@@ -57,20 +48,38 @@ func (rq *Request) setCookie(){
 	return
 }
 
-func (rq *Request) setPostData(){
+func (rq *Request) setFormData(){
+	if len(rq.p.FormData) == 0{
+		return
+	}
+	uValue := url.Values{}
+	for k, v := range rq.p.FormData {
+		uValue.Set(k, v)
+	}
+	rq.r.Body = ioutil.NopCloser(strings.NewReader(uValue.Encode()))
 	return
 }
 
 func (rq *Request) setTransport(){
+	rq.c.Timeout = rq.getDuration(rq.p.TimeOut)
+	if rq.p.Proxy != "" {
+		rq.t.Proxy = func(request *http.Request) (i *url.URL, e error) {
+			return url.Parse(rq.p.Proxy)
+		}
+	}
 	rq.c.Transport = rq.t
 	return
 }
 
+// todo
 func (rq *Request) setFiles(){
 
 }
 
 func (rq *Request) setBody(){
+	if len(rq.p.Data) == 0{
+		return
+	}
 	rq.r.Body = ioutil.NopCloser(strings.NewReader(rq.ObjToJson(rq.p.Data)))
 	return
 }
@@ -104,7 +113,7 @@ func (rq *Request) errHandler(err error) bool{
 }
 
 // send request
-func (rq *Request) send(){
+func (rq *Request) send() IResponse{
 
 	rq.c.Timeout = rq.getDuration(rq.p.TimeOut)
 
@@ -116,16 +125,15 @@ func (rq *Request) send(){
 
 	rq.setUrl()
 	rq.setHeader()
-	rq.setPostData()
+	rq.setFormData()
 	rq.setBody()
 
 	resp,err := rq.c.Do(rq.r)
 	if rq.errHandler(err){
-		return
+		return &response{}
 	}
-	//httputil.DumpRequest()
-	bts,_ := httputil.DumpResponse(resp,true)
-	buf := &bytes.Buffer{}
-	json.Indent(buf,bts,"  ","   ")
-	fmt.Println("debug = ",string(bts))
+	return &response{
+		resp: resp,
+	}
+
 }
