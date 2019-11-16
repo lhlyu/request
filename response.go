@@ -3,6 +3,7 @@ package request
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -16,6 +17,27 @@ type IResponse interface {
 
 type response struct {
 	resp       *http.Response
+	body       []byte
+
+}
+
+func newResponse(resp *http.Response,err error) IResponse{
+	r := &response{
+		resp:resp,
+		body:make([]byte,0),
+	}
+	if err != nil{
+		log.Println("request error :",err)
+		return r
+	}
+	defer resp.Body.Close()
+	bts,err := ioutil.ReadAll(resp.Body)
+	if err != nil{
+		log.Println("read body error :",err)
+		return r
+	}
+	r.body = bts
+	return r
 }
 
 func (r *response) GetRequest() *http.Request{
@@ -27,8 +49,7 @@ func (r *response) GetResponse() *http.Response{
 }
 
 func (r *response) GetBody() string{
-	bts,_ := ioutil.ReadAll(r.resp.Body)
-	return string(bts)
+	return string(r.body)
 }
 
 func (r *response) GetStatus() int{
@@ -36,6 +57,5 @@ func (r *response) GetStatus() int{
 }
 
 func (r *response) BodyUnmarshal(v interface{}) error{
-	bts,_ := ioutil.ReadAll(r.resp.Body)
-	return json.Unmarshal(bts,v)
+	return json.Unmarshal(r.body,v)
 }

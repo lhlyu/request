@@ -129,11 +129,5 @@ func (rq *Request) send() IResponse{
 	rq.setBody()
 
 	resp,err := rq.c.Do(rq.r)
-	if rq.errHandler(err){
-		return &response{}
-	}
-	return &response{
-		resp: resp,
-	}
-
+	return newResponse(resp,err)
 }
