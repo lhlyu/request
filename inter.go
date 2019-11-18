@@ -14,42 +14,46 @@ func (*Request) getDuration(times int) time.Duration {
 	return DURATION * time.Duration(times)
 }
 
-func (rq *Request) setUrl(){
+func (rq *Request) setUrl() {
 	apiUrl := rq.u
-	if strings.Index(rq.u,"//") < 1{
-		if rq.b != ""{
+	if strings.Index(rq.u, "//") < 1 {
+		if rq.b != "" {
 			apiUrl = rq.b + rq.u
 		}
 	}
-	uUrl,err := url.Parse(apiUrl)
-	if rq.errHandler(err){
+	uUrl, err := url.Parse(apiUrl)
+	if rq.errHandler(err) {
 		return
 	}
 	uValues := uUrl.Query()
-	for k,v := range rq.p.Param{
-		uValues.Set(k,v)
+	for k, v := range rq.p.Param {
+		uValues.Set(k, v)
 	}
 	uUrl.RawQuery = uValues.Encode()
 	rq.r.URL = uUrl
 	return
 }
 
-func (rq *Request) setHeader(){
+func (rq *Request) setHeader() {
 	for k, v := range rq.p.Header {
-		rq.r.Header.Set(k,v)
+		rq.r.Header.Set(k, v)
 	}
 	return
 }
 
-func (rq *Request) setCookie(){
+func (rq *Request) getHeader(key string) string {
+	return rq.r.Header.Get(key)
+}
+
+func (rq *Request) setCookie() {
 	for _, v := range rq.p.Cookie {
 		rq.r.AddCookie(v)
 	}
 	return
 }
 
-func (rq *Request) setFormData(){
-	if len(rq.p.FormData) == 0{
+func (rq *Request) setFormData() {
+	if len(rq.p.FormData) == 0 {
 		return
 	}
 	uValue := url.Values{}
@@ -60,7 +64,7 @@ func (rq *Request) setFormData(){
 	return
 }
 
-func (rq *Request) setTransport(){
+func (rq *Request) setTransport() {
 	rq.c.Timeout = rq.getDuration(rq.p.TimeOut)
 	if rq.p.Proxy != "" {
 		rq.t.Proxy = func(request *http.Request) (i *url.URL, e error) {
@@ -72,40 +76,40 @@ func (rq *Request) setTransport(){
 }
 
 // todo
-func (rq *Request) setFiles(){
+func (rq *Request) setFiles() {
 
 }
 
-func (rq *Request) setBody(){
-	if len(rq.p.Data) == 0{
+func (rq *Request) setBody() {
+	if len(rq.p.Data) == 0 {
 		return
 	}
 	rq.r.Body = ioutil.NopCloser(strings.NewReader(rq.ObjToJson(rq.p.Data)))
 	return
 }
 
-func (rq *Request) ObjToJson(v interface{}) string{
-	if v == nil{
+func (rq *Request) ObjToJson(v interface{}) string {
+	if v == nil {
 		return ""
 	}
-	bts,err := json.Marshal(v)
-	if rq.errHandler(err){
+	bts, err := json.Marshal(v)
+	if rq.errHandler(err) {
 		return ""
 	}
 	return string(bts)
 }
 
-func (rq *Request) handler(f func()){
-	if rq.d{
+func (rq *Request) handler(f func()) {
+	if rq.d {
 		f()
 	}
 
 }
 
-func (rq *Request) errHandler(err error) bool{
-	if rq.d{
-		if err != nil{
-			log.Println("ERROR | ",err)
+func (rq *Request) errHandler(err error) bool {
+	if rq.d {
+		if err != nil {
+			log.Println("ERROR | ", err)
 			return true
 		}
 	}
@@ -113,21 +117,23 @@ func (rq *Request) errHandler(err error) bool{
 }
 
 // send request
-func (rq *Request) send() IResponse{
-
-	rq.c.Timeout = rq.getDuration(rq.p.TimeOut)
-
-	rq.setTransport()
-	rq.setCookie()
-	rq.setFiles()
+func (rq *Request) send() IResponse {
 
 	rq.r.Method = rq.m
+	rq.c.Timeout = rq.getDuration(rq.p.TimeOut)
 
 	rq.setUrl()
+	rq.setTransport()
+	rq.setFiles()
 	rq.setHeader()
-	rq.setFormData()
-	rq.setBody()
+	rq.setCookie()
 
-	resp,err := rq.c.Do(rq.r)
-	return newResponse(resp,err)
+	if rq.getHeader(CONTENT_TYPE) == X_WWW_FORM_URLENCODED {
+		rq.setFormData()
+	} else {
+		rq.setBody()
+	}
+
+	resp, err := rq.c.Do(rq.r)
+	return newResponse(resp, err)
 }

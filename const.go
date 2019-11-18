@@ -2,7 +2,7 @@ package request
 
 import "time"
 
-const _version = "v1.0.0"
+const _version = "v1.0.1"
 
 const (
 	DURATION                  = time.Second
@@ -27,9 +27,9 @@ const (
 
 // string type
 const (
-	_KV_LINE = iota   // 行
-	_QS               // queryUrl
-	_JSON             // json
+	_KV_LINE = iota // 行
+	_QS             // queryUrl
+	_JSON           // json
 )
 
 // header key
@@ -39,9 +39,9 @@ const (
 
 // header value
 const (
-	APPLICATION_JSON = "application/json"                         //  json参数放body
-	X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"   // 一般运用于表单提交 参数放body， & 拼接
-	FORM_DATA = "multipart/form-data"                             // 文件上传  参数放body， 参数用分隔符 --------
+	APPLICATION_JSON      = "application/json"                  //  json参数放body
+	X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded" // 一般运用于表单提交 参数放body， & 拼接
+	FORM_DATA             = "multipart/form-data"               // 文件上传  参数放body， 参数用分隔符 --------
 )
 
 //var Types = map[string]string{
@@ -54,4 +54,3 @@ const (
 //	"form-data":  "application/x-www-form-urlencoded",
 //	"multipart":  "multipart/form-data",
 //}
-
