@@ -1,9 +1,12 @@
 package request
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -53,12 +56,12 @@ func (rq *Request) setCookie() {
 }
 
 func (rq *Request) setFormData() {
-	if len(rq.p.FormData) == 0 {
+	if len(rq.p.Data) == 0 {
 		return
 	}
 	uValue := url.Values{}
-	for k, v := range rq.p.FormData {
-		uValue.Set(k, v)
+	for k, v := range rq.p.Data {
+		uValue.Set(k, anyToString(v))
 	}
 	rq.r.Body = ioutil.NopCloser(strings.NewReader(uValue.Encode()))
 	return
@@ -75,9 +78,34 @@ func (rq *Request) setTransport() {
 	return
 }
 
-// todo
 func (rq *Request) setFiles() {
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	for k, v := range rq.p.FileData {
+		formData, err := writer.CreateFormField(k)
+		if err != nil {
+			log.Printf("create form field %v\n", k)
+			return
+		}
+		_, err = io.Copy(formData, v)
+		if err != nil {
+			return
+		}
 
+		if err := v.Close(); err != nil {
+			log.Printf("open %s file is err : %v\n", v.Name(), err)
+			return
+		}
+	}
+
+	for k, v := range rq.p.Data {
+		_ = writer.WriteField(k, anyToString(v))
+	}
+	err := writer.Close()
+	if err != nil {
+		return
+	}
+	rq.r.Body = ioutil.NopCloser(strings.NewReader(body.String()))
 }
 
 func (rq *Request) setBody() {
@@ -124,12 +152,13 @@ func (rq *Request) send() IResponse {
 
 	rq.setUrl()
 	rq.setTransport()
-	rq.setFiles()
 	rq.setHeader()
 	rq.setCookie()
 
 	if rq.getHeader(CONTENT_TYPE) == X_WWW_FORM_URLENCODED {
 		rq.setFormData()
+	} else if rq.getHeader(CONTENT_TYPE) == FORM_DATA {
+		rq.setFiles()
 	} else {
 		rq.setBody()
 	}

@@ -2,7 +2,9 @@ package request
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 )
 
 func (rq *Request) SetDebug(debug bool) *Request {
@@ -29,6 +31,7 @@ func (rq *Request) SetMethod(method string) *Request {
 	rq.m = method
 	return rq
 }
+
 // 设置超时时间,超时包括连接时间，任何重定向和读取响应正文,0表示不会超时
 func (rq *Request) SetTimeOut(second int) *Request {
 	rq.p.TimeOut = second
@@ -39,6 +42,7 @@ func (rq *Request) SetProxy(proxy string) *Request {
 	rq.p.Proxy = proxy
 	return rq
 }
+
 // map | string(query | lines | json)
 func (rq *Request) SetParam(v interface{}) *Request {
 	rq.p.Param = toMSS(v)
@@ -49,6 +53,7 @@ func (rq *Request) AddParam(k string, v interface{}) *Request {
 	rq.p.Param[k] = anyToString(v)
 	return rq
 }
+
 // map | string(query | lines | json)
 func (rq *Request) SetHeader(v interface{}) *Request {
 	rq.p.Header = toMSS(v)
@@ -61,15 +66,15 @@ func (rq *Request) AddHeader(k string, v interface{}) *Request {
 }
 
 func (rq *Request) AddCookies(cookies ...*Cookie) *Request {
-	if cookies != nil{
-		rq.p.Cookie = append(rq.p.Cookie,cookies...)
+	if cookies != nil {
+		rq.p.Cookie = append(rq.p.Cookie, cookies...)
 	}
 	return rq
 }
 
 func (rq *Request) AddCookieSimple(k string, v interface{}) *Request {
-	rq.p.Cookie = append(rq.p.Cookie,&Cookie{
-		Name: k,
+	rq.p.Cookie = append(rq.p.Cookie, &Cookie{
+		Name:  k,
 		Value: anyToString(v),
 	})
 	return rq
@@ -85,25 +90,35 @@ func (rq *Request) AddData(k string, v interface{}) *Request {
 	return rq
 }
 
-func (rq *Request) SetFormData(v interface{}) *Request {
-	rq.p.FormData = toMSS(v)
+func (rq *Request) SetFile(v interface{}) *Request {
+	m := toMSS(v)
+	for k, v := range m {
+		f, err := os.Open(v)
+		if err != nil {
+			log.Printf("open %s file is err : %v\n", v, err)
+			continue
+		}
+		rq.p.FileData[k] = f
+	}
 	return rq
 }
 
-func (rq *Request) AddFormData(k string, v interface{}) *Request {
-	rq.p.FormData[k] = anyToString(v)
+func (rq *Request) AddFile(field, filePath string) *Request {
+	f, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("open %s file is err : %v\n", filePath, err)
+		return rq
+	}
+	rq.p.FileData[field] = f
 	return rq
 }
-// todo
-func (rq *Request) SetFiles(filePaths ...string) *Request {
-	rq.p.Files = filePaths
+
+// 设置 content-type
+func (rq *Request) SetContentType(tp string) *Request {
+	rq.AddHeader(CONTENT_TYPE, tp)
 	return rq
 }
-// todo
-func (rq *Request) AddFile(filePath string) *Request {
-	rq.p.Files = append(rq.p.Files, filePath)
-	return rq
-}
+
 // 设置 Transport
 func (rq *Request) SetTransport(transport *http.Transport) *Request {
 	rq.t = transport
@@ -125,14 +140,13 @@ func (rq *Request) SetOption(option *Option) *Request {
 	return rq
 }
 
-
 func (rq *Request) DoHttp() IResponse {
 	return rq.send()
 }
 
 func (rq *Request) DoGet(apiUrl string, param interface{}) IResponse {
 	rq.SetMethod(GET)
-	rq.AddHeader(CONTENT_TYPE,APPLICATION_JSON)
+	rq.AddHeader(CONTENT_TYPE, APPLICATION_JSON)
 	rq.SetUrl(apiUrl)
 	rq.SetParam(param)
 	return rq.send()
@@ -140,7 +154,7 @@ func (rq *Request) DoGet(apiUrl string, param interface{}) IResponse {
 
 func (rq *Request) DoPost(apiUrl string, data interface{}) IResponse {
 	rq.SetMethod(POST)
-	rq.AddHeader(CONTENT_TYPE,APPLICATION_JSON)
+	rq.AddHeader(CONTENT_TYPE, APPLICATION_JSON)
 	rq.SetUrl(apiUrl)
 	rq.SetData(data)
 	return rq.send()
@@ -148,9 +162,8 @@ func (rq *Request) DoPost(apiUrl string, data interface{}) IResponse {
 
 func (rq *Request) DoPostForm(apiUrl string, formData interface{}) IResponse {
 	rq.SetMethod(POST)
-	rq.AddHeader(CONTENT_TYPE,X_WWW_FORM_URLENCODED)
+	rq.AddHeader(CONTENT_TYPE, X_WWW_FORM_URLENCODED)
 	rq.SetUrl(apiUrl)
-	rq.SetFormData(formData)
+	rq.SetData(formData)
 	return rq.send()
 }
-
