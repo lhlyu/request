@@ -2,9 +2,7 @@ package request
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 )
 
 func (rq *Request) SetDebug(debug bool) *Request {
@@ -93,23 +91,13 @@ func (rq *Request) AddData(k string, v interface{}) *Request {
 func (rq *Request) SetFile(v interface{}) *Request {
 	m := toMSS(v)
 	for k, v := range m {
-		f, err := os.Open(v)
-		if err != nil {
-			log.Printf("open %s file is err : %v\n", v, err)
-			continue
-		}
-		rq.p.FileData[k] = f
+		rq.p.FileData[k] = v
 	}
 	return rq
 }
 
 func (rq *Request) AddFile(field, filePath string) *Request {
-	f, err := os.Open(filePath)
-	if err != nil {
-		log.Printf("open %s file is err : %v\n", filePath, err)
-		return rq
-	}
-	rq.p.FileData[field] = f
+	rq.p.FileData[field] = filePath
 	return rq
 }
 
@@ -144,7 +132,7 @@ func (rq *Request) DoHttp() IResponse {
 	return rq.send()
 }
 
-func (rq *Request) DoGet(apiUrl string, param interface{}) IResponse {
+func (rq *Request) Get(apiUrl string, param interface{}) IResponse {
 	rq.SetMethod(GET)
 	rq.AddHeader(CONTENT_TYPE, APPLICATION_JSON)
 	rq.SetUrl(apiUrl)
@@ -152,7 +140,7 @@ func (rq *Request) DoGet(apiUrl string, param interface{}) IResponse {
 	return rq.send()
 }
 
-func (rq *Request) DoPost(apiUrl string, data interface{}) IResponse {
+func (rq *Request) Post(apiUrl string, data interface{}) IResponse {
 	rq.SetMethod(POST)
 	rq.AddHeader(CONTENT_TYPE, APPLICATION_JSON)
 	rq.SetUrl(apiUrl)
@@ -160,10 +148,34 @@ func (rq *Request) DoPost(apiUrl string, data interface{}) IResponse {
 	return rq.send()
 }
 
-func (rq *Request) DoPostForm(apiUrl string, formData interface{}) IResponse {
+func (rq *Request) PostForm(apiUrl string, formData interface{}) IResponse {
 	rq.SetMethod(POST)
 	rq.AddHeader(CONTENT_TYPE, X_WWW_FORM_URLENCODED)
 	rq.SetUrl(apiUrl)
 	rq.SetData(formData)
+	return rq.send()
+}
+
+func (rq *Request) DoGet() IResponse {
+	rq.SetMethod(GET)
+	rq.AddHeader(CONTENT_TYPE, APPLICATION_JSON)
+	return rq.send()
+}
+
+func (rq *Request) DoPost() IResponse {
+	rq.SetMethod(POST)
+	rq.AddHeader(CONTENT_TYPE, APPLICATION_JSON)
+	return rq.send()
+}
+
+func (rq *Request) DoPostForm() IResponse {
+	rq.SetMethod(POST)
+	rq.AddHeader(CONTENT_TYPE, X_WWW_FORM_URLENCODED)
+	return rq.send()
+}
+
+func (rq *Request) DoPostFile() IResponse {
+	rq.SetMethod(POST)
+	rq.AddHeader(CONTENT_TYPE, FORM_DATA)
 	return rq.send()
 }

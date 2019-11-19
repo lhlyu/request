@@ -26,7 +26,7 @@ func anyToString(v interface{}) string {
 	}
 }
 
-func toMSS(v interface{}) MSS{
+func toMSS(v interface{}) MSS {
 	tp := reflect.TypeOf(v)
 	switch tp.Kind() {
 	case reflect.Map:
@@ -42,7 +42,7 @@ func toMSS(v interface{}) MSS{
 		}
 	case reflect.String:
 		s := v.(string)
-		data := strToMSI(s,getStrType(s))
+		data := strToMSI(s, getStrType(s))
 		m := make(MSS)
 		for k, v := range data {
 			m[k] = anyToString(v)
@@ -52,7 +52,7 @@ func toMSS(v interface{}) MSS{
 	return nil
 }
 
-func toMSI(v interface{}) MSI{
+func toMSI(v interface{}) MSI {
 	tp := reflect.TypeOf(v)
 	switch tp.Kind() {
 	case reflect.Map:
@@ -62,7 +62,7 @@ func toMSI(v interface{}) MSI{
 		}
 	case reflect.String:
 		s := v.(string)
-		return  strToMSI(s,getStrType(s))
+		return strToMSI(s, getStrType(s))
 	}
 	return nil
 }

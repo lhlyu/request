@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -36,10 +35,14 @@ type IRequest interface {
 	SetClient(c *http.Client) *Request               // 自定义HTTP client
 	SetOption(option *Option) *Request               // 自定义参数
 
-	DoHttp() IResponse                                        // 发起请求
-	DoGet(apiUrl string, param interface{}) IResponse         // GET 请求
-	DoPost(apiUrl string, data interface{}) IResponse         // POST 请求
-	DoPostForm(apiUrl string, formData interface{}) IResponse // POST FORM 请求
+	Get(apiUrl string, param interface{}) IResponse         // GET 请求
+	Post(apiUrl string, data interface{}) IResponse         // POST 请求
+	PostForm(apiUrl string, formData interface{}) IResponse // POST FORM 请求
+	DoHttp() IResponse                                      // 发起请求
+	DoPost() IResponse                                      // 发起post请求
+	DoGet() IResponse                                       // 发起get请求
+	DoPostForm() IResponse                                  // 发起post form请求
+	DoPostFile() IResponse                                  // 发起post multipart/form-data 请求
 }
 
 type Request struct {
@@ -61,7 +64,7 @@ type Option struct {
 	Param    map[string]string      // url参数， ? 后面的参数
 	Header   map[string]string      // 请求头
 	Data     map[string]interface{} // body 参数 json形式
-	FileData map[string]*os.File    // 文件
+	FileData map[string]string      // 文件
 }
 
 type (
@@ -98,7 +101,7 @@ func NewRequest() IRequest {
 		Header: map[string]string{
 			CONTENT_TYPE: APPLICATION_JSON,
 		},
-		FileData: make(map[string]*os.File),
+		FileData: make(map[string]string),
 	}
 	return &Request{
 		c: c,

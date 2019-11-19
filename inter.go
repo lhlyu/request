@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -82,18 +83,21 @@ func (rq *Request) setFiles() {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 	for k, v := range rq.p.FileData {
-		formData, err := writer.CreateFormField(k)
+		f, err := os.Open(v)
+		defer f.Close()
+		if err != nil {
+			log.Printf("open %s file is err : %v\n", v, err)
+			return
+		}
+		formData, err := writer.CreateFormFile(k, f.Name())
 		if err != nil {
 			log.Printf("create form field %v\n", k)
 			return
 		}
-		_, err = io.Copy(formData, v)
-		if err != nil {
-			return
-		}
 
-		if err := v.Close(); err != nil {
-			log.Printf("open %s file is err : %v\n", v.Name(), err)
+		_, err = io.Copy(formData, f)
+		if err != nil {
+			log.Printf("copy %s file is err : %v\n", v, err)
 			return
 		}
 	}
@@ -103,8 +107,10 @@ func (rq *Request) setFiles() {
 	}
 	err := writer.Close()
 	if err != nil {
+		log.Printf("close writer is err : %v\n", err)
 		return
 	}
+	rq.r.Header.Set("Content-Type", writer.FormDataContentType())
 	rq.r.Body = ioutil.NopCloser(strings.NewReader(body.String()))
 }
 

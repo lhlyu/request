@@ -16,7 +16,7 @@ go http request
 ```go
 func main(){
     rq := request.NewRequest()
-    resp := rq.DoGet("http://localhost:8080","a=1&b=2&c=3")
+    resp := rq.Get("http://localhost:8080","a=1&b=2&c=3")
     fmt.Println(resp.GetStatus())
     fmt.Println(resp.GetBody())
     
@@ -29,11 +29,11 @@ func main(){
         C  int  `json:"c"`
     }
     p := &P{1,2,3}
-    rq.DoGet("http://localhost:8080",p)
+    rq.Get("http://localhost:8080",p)
     
     // 第三种方式
     
-    rq.DoGet("http://localhost:8080",`
+    rq.Get("http://localhost:8080",`
     a :  1    //这是一个注释会自动去除
     b:2
              c:3
@@ -41,7 +41,7 @@ func main(){
     `)
     
     // 第四种 json字符串
-    rq.DoGet("http://localhost:8080",`{"a":1,"b":"2"}`)
+    rq.Get("http://localhost:8080",`{"a":1,"b":"2"}`)
 
 }
 ```
@@ -52,10 +52,10 @@ func main(){
 func main(){
     rq := request.NewRequest()
     // 同样支持四种形式的传参，参数都会放到 body
-    rq.DoPost("http://localhost:8080","a=1&b=2&c=3")
-    rq.DoPost("http://localhost:8080",`{"a":1,"b":"2"}`)
-    rq.DoPost("http://localhost:8080",p)
-    rq.DoPost("http://localhost:8080",`
+    rq.Post("http://localhost:8080","a=1&b=2&c=3")
+    rq.Post("http://localhost:8080",`{"a":1,"b":"2"}`)
+    rq.Post("http://localhost:8080",p)
+    rq.Post("http://localhost:8080",`
     a :  1    //这是一个注释会自动去除
     b:2
            c:3
@@ -84,5 +84,16 @@ func main(){
     resp := rq.DoHttp()
     fmt.Println(resp.GetStatus())
     fmt.Println(resp.GetBody())
+}
+```
+
+```go
+func main() {
+	rq := request.NewRequest()
+	rq.SetUrl("http://xxxx.com/upload")
+	rq.SetFile(`file:C:\xxx.jpg`)
+	resp := rq.DoPostFile()
+	fmt.Println(resp.GetBody())
+	fmt.Println(resp.GetStatus())
 }
 ```
