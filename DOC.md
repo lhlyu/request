@@ -12,7 +12,6 @@ NewRequest() IRequest  // 新建一个请求
 type Option struct {
 	Proxy    string                 // 代理地址
 	TimeOut  int                    // 超时时间 秒
-	Files    []string               // 文件路径 (暂未实现)
 	Cookie   []*Cookie              // cookies
 	Param    map[string]string      // url参数， ? 后面的参数
 	Header   map[string]string      // 请求头

@@ -2,16 +2,11 @@ package request
 
 import "time"
 
-const _version = "v1.2.0"
+const _version = "v1.2.1"
 
 const (
 	DURATION                  = time.Second
 	DEFAULT_RESPONSE_TIME_OUT = DURATION * 5 // 默认超时时间 5s
-)
-
-// error tip
-const (
-	url_empty = "url is empty"
 )
 
 // http method

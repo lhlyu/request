@@ -137,7 +137,6 @@ func (rq *Request) handler(f func()) {
 	if rq.d {
 		f()
 	}
-
 }
 
 func (rq *Request) errHandler(err error) bool {
@@ -154,7 +153,6 @@ func (rq *Request) errHandler(err error) bool {
 func (rq *Request) send() IResponse {
 
 	rq.r.Method = rq.m
-	rq.c.Timeout = rq.getDuration(rq.p.TimeOut)
 
 	rq.setUrl()
 	rq.setTransport()

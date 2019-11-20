@@ -59,7 +59,6 @@ type Request struct {
 type Option struct {
 	Proxy    string                 // 代理地址
 	TimeOut  int                    // 超时时间 秒
-	Files    []string               // 文件路径 (暂未实现)
 	Cookie   []*Cookie              // cookies
 	Param    map[string]string      // url参数， ? 后面的参数
 	Header   map[string]string      // 请求头
@@ -95,7 +94,6 @@ func NewRequest() IRequest {
 	t := &http.Transport{}
 	p := &Option{
 		Cookie: make([]*Cookie, 0),
-		Files:  make([]string, 0),
 		Param:  make(map[string]string),
 		Data:   make(map[string]interface{}),
 		Header: map[string]string{

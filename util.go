@@ -4,62 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/url"
-	"regexp"
 	"strings"
 )
-
-// 下划线转连接符
-func underlineToConnector(s string) string {
-	return strings.Replace(s, "_", "-", -1)
-}
-
-// 小驼峰
-func toSmallTitle(s string) string {
-	if s == "" {
-		return ""
-	}
-	s = strings.Replace(s, "_", " ", -1)
-	s = strings.Title(s)
-	re, _ := regexp.Compile("\\s+")
-	s = re.ReplaceAllString(s, "")
-	if len(s) == 0 {
-		return ""
-	}
-	s = strings.ToLower(s[0:1]) + s[1:]
-	return s
-}
-
-//func UploadFile(url string, params map[string]string, nameField, fileName string, file io.Reader) ([]byte, error) {
-//	body := new(bytes.Buffer)
-//
-//	writer := multipart.NewWriter(body)
-//
-//	formFile, err := writer.CreateFormFile(nameField, fileName)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	_, err = io.Copy(formFile, file)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	for key, val := range params {
-//		_ = writer.WriteField(key, val)
-//	}
-//
-//	err = writer.Close()
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	req, err := http.NewRequest("POST", url, body)
-//	if err != nil {
-//		return nil, err
-//	}
-//	req.Header.Add("Content-Type", writer.FormDataContentType())
-//	return nil, err
-//}
 
 func getStrType(s string) int {
 	if json.Valid([]byte(s)) {

@@ -8,6 +8,9 @@ import (
 
 // any type to string
 func anyToString(v interface{}) string {
+	if v == nil {
+		return ""
+	}
 	switch d := v.(type) {
 	case string:
 		return d
@@ -27,6 +30,9 @@ func anyToString(v interface{}) string {
 }
 
 func toMSS(v interface{}) MSS {
+	if v == nil {
+		return nil
+	}
 	tp := reflect.TypeOf(v)
 	switch tp.Kind() {
 	case reflect.Map:
@@ -53,6 +59,9 @@ func toMSS(v interface{}) MSS {
 }
 
 func toMSI(v interface{}) MSI {
+	if v == nil {
+		return nil
+	}
 	tp := reflect.TypeOf(v)
 	switch tp.Kind() {
 	case reflect.Map:

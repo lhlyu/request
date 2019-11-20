@@ -2,6 +2,7 @@ package request
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ type IResponse interface {
 	GetBody() string                   // 获取body内容
 	GetStatus() int                    // 获取响应状态码
 	IsStatusOk() bool                  // 响应状态码 == 200
+	AssertStatus(status int)           // 断言状态码
 	BodyUnmarshal(v interface{}) error // 数据解析
 }
 
@@ -58,6 +60,10 @@ func (r *response) GetStatus() int {
 
 func (r *response) IsStatusOk() bool {
 	return r.resp.StatusCode == 200
+}
+
+func (r *response) AssertStatus(status int) {
+	fmt.Println(r.resp.StatusCode == status)
 }
 
 func (r *response) BodyUnmarshal(v interface{}) error {
