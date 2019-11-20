@@ -49,6 +49,7 @@ func (r *response) GetRequest() *http.Request {
 }
 
 func (r *response) GetResponse() *http.Response {
+	r.resp.Body = ioutil.NopCloser(strings.NewReader(r.GetBody()))
 	return r.resp
 }
 
