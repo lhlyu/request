@@ -106,3 +106,24 @@ func f10() {
 		AddData("userId", 1).           // 其他参数
 		DoPostFile().AssertStatus(200)
 }
+
+type Msg struct {
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+}
+
+func f11() {
+
+	result := &Msg{}
+
+	m := map[string]interface{}{
+		"userId": 1,
+		"name":   "tt",
+	}
+
+	request.NewRequest().
+		SetUrl("http://localhost:8080").
+		SetData(m).
+		DoPost().
+		BodyUnmarshal(result)
+}
