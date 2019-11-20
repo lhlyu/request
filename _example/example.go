@@ -19,6 +19,7 @@ func main() {
 	f9()
 	f10()
 	f11()
+	f12()
 }
 
 func f1() {
@@ -136,4 +137,13 @@ func f11() {
 		SetData(m).
 		DoPost().
 		BodyUnmarshal(result)
+}
+
+func f12() {
+	resp := request.NewRequest().
+		SetUrl("http://localhost:8080").
+		DoGet()
+	err := resp.Error()
+	fmt.Println(err)
+	fmt.Println(resp.GetStatus())
 }

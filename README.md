@@ -128,4 +128,14 @@ func f11(){
 		DoPost().
 		BodyUnmarshal(result)
 }
+
+func f12(){
+	resp := request.NewRequest().
+		SetUrl("http://localhost:8080").
+		DoGet()
+	err := resp.Error()
+	fmt.Println(err)
+	fmt.Println(resp.GetStatus())
+}
+
 ```

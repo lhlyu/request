@@ -18,11 +18,13 @@ type IResponse interface {
 	AssertStatus(status int)           // 断言状态码
 	BodyUnmarshal(v interface{}) error // 数据解析
 	Then(func(resp *http.Response))    // 自定义处理   response
+	Error() error                      // 返回请求错误
 }
 
 type response struct {
 	resp *http.Response
 	body []byte
+	err  error
 }
 
 func newResponse(resp *http.Response, err error) IResponse {
@@ -32,6 +34,7 @@ func newResponse(resp *http.Response, err error) IResponse {
 	r := &response{
 		resp: resp,
 		body: make([]byte, 0),
+		err:  err,
 	}
 	if err != nil {
 		log.Println("request error :", err)
@@ -80,6 +83,10 @@ func (r *response) Then(f func(resp *http.Response)) {
 	rsp := r.GetResponse()
 	rsp.Body = ioutil.NopCloser(strings.NewReader(r.GetBody()))
 	f(rsp)
+}
+
+func (r *response) Error() error {
+	return r.err
 }
 
 /**
