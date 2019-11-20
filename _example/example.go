@@ -1,9 +1,14 @@
 package main
 
-import "github.com/lhlyu/request"
+import (
+	"fmt"
+	"github.com/lhlyu/request"
+	"io/ioutil"
+	"net/http"
+)
 
 func main() {
-	f1()
+	f9()
 }
 
 func f1() {
@@ -20,14 +25,16 @@ func f2() {
 }
 
 func f3() {
-	request.NewRequest().SetTimeOut(5). // 5 second
-						SetBaseUrl("http://localhost:8080").
-						SetUrl("/api/users"). // real url = baseUrl + Url
-						DoGet().AssertStatus(200)
+	request.NewRequest().
+		SetTimeOut(5). // 5 second
+		SetBaseUrl("http://localhost:8080").
+		SetUrl("/api/users"). // real url = baseUrl + Url
+		DoGet().AssertStatus(200)
 }
 
 func f4() {
-	request.NewRequest().SetProxy("http://localhost:8081").
+	request.NewRequest().
+		SetProxy("http://localhost:8081").
 		SetUrl("http://localhost:8080").
 		DoGet().AssertStatus(200)
 }
@@ -65,4 +72,19 @@ func f8() {
 		SetUrl("http://localhost:8080").
 		SetData("userId=1&name=tt").
 		DoPost().AssertStatus(200)
+}
+
+func f9() {
+	request.NewRequest().
+		SetUrl("http://localhost:8080/api/articles").
+		SetDebug(true).
+		AddHeader("userId",1).
+		SetParam(`{"pageNum":1,"pageSize":10}`).      // 这里的参数会拼接到 url ? 后面
+		DoGet().Then(func(resp *http.Response) {         // 自定义处理响应体
+		if resp.StatusCode == 200{
+			fmt.Println("自定义处理响应体")
+			bts,_ := ioutil.ReadAll(resp.Body)
+			fmt.Println(string(bts))
+		}
+	})
 }

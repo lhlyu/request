@@ -70,4 +70,5 @@ GetStatus() int                    // 获取响应状态码
 IsStatusOk() bool                  // 响应状态码 == 200
 AssertStatus(status int)           // 断言状态码
 BodyUnmarshal(v interface{}) error // 数据解析
+Then(func(resp *http.Response))    // 自定义处理   response
 ```
