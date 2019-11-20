@@ -8,32 +8,32 @@ import (
 )
 
 type IRequest interface {
-	SetDebug(debug bool) *Request                        // 打印日志
-	SetBaseUrl(baseUrl string) *Request                  // 这个会拼接在url前面
-	SetUrl(apiUrl string) *Request                       // 设置Url
-	SetUrlf(urlFormat string, v ...interface{}) *Request // 格式化设置Url
-	SetMethod(method string) *Request                    // 设置请求方法
+	SetDebug(debug bool) IRequest                        // 打印日志
+	SetBaseUrl(baseUrl string) IRequest                  // 这个会拼接在url前面
+	SetUrl(apiUrl string) IRequest                       // 设置Url
+	SetUrlf(urlFormat string, v ...interface{}) IRequest // 格式化设置Url
+	SetMethod(method string) IRequest                    // 设置请求方法
 
-	SetTimeOut(second int) *Request   // 设置超时时间
-	SetProxy(proxy string) *Request   // 设置代理
-	SetParam(v interface{}) *Request  // 设置url参数,? 后面的参数
-	SetHeader(v interface{}) *Request // 设置头
-	SetData(v interface{}) *Request   // 设置body参数
-	SetFile(v interface{}) *Request   // 设置文件
+	SetTimeOut(second int) IRequest   // 设置超时时间
+	SetProxy(proxy string) IRequest   // 设置代理
+	SetParam(v interface{}) IRequest  // 设置url参数,? 后面的参数
+	SetHeader(v interface{}) IRequest // 设置头
+	SetData(v interface{}) IRequest   // 设置body参数
+	SetFile(v interface{}) IRequest   // 设置文件
 
-	AddCookies(cookies ...*Cookie) *Request           // 添加Cookie
-	AddParam(k string, v interface{}) *Request        // 添加url参数,? 后面的参数
-	AddHeader(k string, v interface{}) *Request       // 添加头部参数
-	AddCookieSimple(k string, v interface{}) *Request // 添加简单的cookie
-	AddData(k string, v interface{}) *Request         // 添加body 参数
-	AddFile(field, filePath string) *Request          // 添加文件
+	AddCookies(cookies ...*Cookie) IRequest           // 添加Cookie
+	AddParam(k string, v interface{}) IRequest        // 添加url参数,? 后面的参数
+	AddHeader(k string, v interface{}) IRequest       // 添加头部参数
+	AddCookieSimple(k string, v interface{}) IRequest // 添加简单的cookie
+	AddData(k string, v interface{}) IRequest         // 添加body 参数
+	AddFile(field, filePath string) IRequest          // 添加文件
 
-	SetContentType(tp string) *Request // 设置 content-type
+	SetContentType(tp string) IRequest // 设置 content-type
 
-	SetTransport(transport *http.Transport) *Request // 自定义transport
-	SetRequest(r *http.Request) *Request             // 自定义请求体
-	SetClient(c *http.Client) *Request               // 自定义HTTP client
-	SetOption(option *Option) *Request               // 自定义参数
+	SetTransport(transport *http.Transport) IRequest // 自定义transport
+	SetRequest(r *http.Request) IRequest             // 自定义请求体
+	SetClient(c *http.Client) IRequest               // 自定义HTTP client
+	SetOption(option *Option) IRequest               // 自定义参数
 
 	Get(apiUrl string, param interface{}) IResponse         // GET 请求
 	Post(apiUrl string, data interface{}) IResponse         // POST 请求

@@ -5,72 +5,72 @@ import (
 	"net/http"
 )
 
-func (rq *Request) SetDebug(debug bool) *Request {
+func (rq *Request) SetDebug(debug bool) IRequest {
 	rq.d = debug
 	return rq
 }
 
-func (rq *Request) SetBaseUrl(baseUrl string) *Request {
+func (rq *Request) SetBaseUrl(baseUrl string) IRequest {
 	rq.b = baseUrl
 	return rq
 }
 
-func (rq *Request) SetUrl(apiUrl string) *Request {
+func (rq *Request) SetUrl(apiUrl string) IRequest {
 	rq.u = apiUrl
 	return rq
 }
 
-func (rq *Request) SetUrlf(urlFormat string, v ...interface{}) *Request {
+func (rq *Request) SetUrlf(urlFormat string, v ...interface{}) IRequest {
 	rq.u = fmt.Sprintf(urlFormat, v...)
 	return rq
 }
 
-func (rq *Request) SetMethod(method string) *Request {
+func (rq *Request) SetMethod(method string) IRequest {
 	rq.m = method
 	return rq
 }
 
 // 设置超时时间,超时包括连接时间，任何重定向和读取响应正文,0表示不会超时
-func (rq *Request) SetTimeOut(second int) *Request {
+func (rq *Request) SetTimeOut(second int) IRequest {
 	rq.p.TimeOut = second
 	return rq
 }
 
-func (rq *Request) SetProxy(proxy string) *Request {
+func (rq *Request) SetProxy(proxy string) IRequest {
 	rq.p.Proxy = proxy
 	return rq
 }
 
 // map | string(query | lines | json)
-func (rq *Request) SetParam(v interface{}) *Request {
+func (rq *Request) SetParam(v interface{}) IRequest {
 	rq.p.Param = toMSS(v)
 	return rq
 }
 
-func (rq *Request) AddParam(k string, v interface{}) *Request {
+func (rq *Request) AddParam(k string, v interface{}) IRequest {
 	rq.p.Param[k] = anyToString(v)
 	return rq
 }
 
 // map | string(query | lines | json)
-func (rq *Request) SetHeader(v interface{}) *Request {
+func (rq *Request) SetHeader(v interface{}) IRequest {
 	rq.p.Header = toMSS(v)
 	return rq
 }
 
-func (rq *Request) AddHeader(k string, v interface{}) *Request {
+func (rq *Request) AddHeader(k string, v interface{}) IRequest {
 	rq.p.Header[k] = anyToString(v)
 	return rq
 }
 
-func (rq *Request) AddCookies(cookies ...*Cookie) *Request {
+func (rq *Request) AddCookies(cookies ...*Cookie) IRequest {
 	if cookies != nil {
 		rq.p.Cookie = append(rq.p.Cookie, cookies...)
 	}
 	return rq
 }
 
-func (rq *Request) AddCookieSimple(k string, v interface{}) *Request {
+func (rq *Request) AddCookieSimple(k string, v interface{}) IRequest {
 	rq.p.Cookie = append(rq.p.Cookie, &Cookie{
 		Name:  k,
 		Value: anyToString(v),
@@ -78,17 +78,17 @@ func (rq *Request) AddCookieSimple(k string, v interface{}) *Request {
 	return rq
 }
 
-func (rq *Request) SetData(v interface{}) *Request {
+func (rq *Request) SetData(v interface{}) IRequest {
 	rq.p.Data = toMSI(v)
 	return rq
 }
 
-func (rq *Request) AddData(k string, v interface{}) *Request {
+func (rq *Request) AddData(k string, v interface{}) IRequest {
 	rq.p.Data[k] = v
 	return rq
 }
 
-func (rq *Request) SetFile(v interface{}) *Request {
+func (rq *Request) SetFile(v interface{}) IRequest {
 	m := toMSS(v)
 	for k, v := range m {
 		rq.p.FileData[k] = v
@@ -96,34 +96,34 @@ func (rq *Request) SetFile(v interface{}) *Request {
 	return rq
 }
 
-func (rq *Request) AddFile(field, filePath string) *Request {
+func (rq *Request) AddFile(field, filePath string) IRequest {
 	rq.p.FileData[field] = filePath
 	return rq
 }
 
 // 设置 content-type
-func (rq *Request) SetContentType(tp string) *Request {
+func (rq *Request) SetContentType(tp string) IRequest {
 	rq.AddHeader(CONTENT_TYPE, tp)
 	return rq
 }
 
 // 设置 Transport
-func (rq *Request) SetTransport(transport *http.Transport) *Request {
+func (rq *Request) SetTransport(transport *http.Transport) IRequest {
 	rq.t = transport
 	return rq
 }
 
-func (rq *Request) SetRequest(r *http.Request) *Request {
+func (rq *Request) SetRequest(r *http.Request) IRequest {
 	rq.r = r
 	return rq
 }
 
-func (rq *Request) SetClient(c *http.Client) *Request {
+func (rq *Request) SetClient(c *http.Client) IRequest {
 	rq.c = c
 	return rq
 }
 
-func (rq *Request) SetOption(option *Option) *Request {
+func (rq *Request) SetOption(option *Option) IRequest {
 	rq.p = option
 	return rq
 }

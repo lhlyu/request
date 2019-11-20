@@ -26,6 +26,9 @@ type response struct {
 }
 
 func newResponse(resp *http.Response, err error) IResponse {
+	if resp == nil {
+		resp = &http.Response{}
+	}
 	r := &response{
 		resp: resp,
 		body: make([]byte, 0),
