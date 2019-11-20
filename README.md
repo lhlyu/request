@@ -89,4 +89,22 @@ func f9() {
 		}
 	})
 }
+
+// 上传文件
+
+func f10() {
+	// eg1:
+	request.NewRequest().
+		SetUrl("http://localhost:8080/api/upload").
+		SetFile(`file: E:\x.png`).
+		DoPostFile().AssertStatus(200)
+
+	// eg2:
+	request.NewRequest().
+		SetUrl("http://localhost:8080/api/upload").
+		AddFile("file1","E:\\x1.png").       // 文件1
+		AddFile("file2","E:\\x2.png").       // 文件2
+		AddData("userId",1).                 // 其他参数
+		DoPostFile().AssertStatus(200)
+}
 ```

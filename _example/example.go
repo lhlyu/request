@@ -78,13 +78,31 @@ func f9() {
 	request.NewRequest().
 		SetUrl("http://localhost:8080/api/articles").
 		SetDebug(true).
-		AddHeader("userId",1).
-		SetParam(`{"pageNum":1,"pageSize":10}`).      // 这里的参数会拼接到 url ? 后面
-		DoGet().Then(func(resp *http.Response) {         // 自定义处理响应体
-		if resp.StatusCode == 200{
+		AddHeader("userId", 1).
+		SetParam(`{"pageNum":1,"pageSize":10}`). // 这里的参数会拼接到 url ? 后面
+		DoGet().Then(func(resp *http.Response) { // 自定义处理响应体
+		if resp.StatusCode == 200 {
 			fmt.Println("自定义处理响应体")
-			bts,_ := ioutil.ReadAll(resp.Body)
+			bts, _ := ioutil.ReadAll(resp.Body)
 			fmt.Println(string(bts))
 		}
 	})
+}
+
+// 上传文件
+
+func f10() {
+	// eg1:
+	request.NewRequest().
+		SetUrl("http://localhost:8080/api/upload").
+		SetFile(`file: E:\x.png`).
+		DoPostFile().AssertStatus(200)
+
+	// eg2:
+	request.NewRequest().
+		SetUrl("http://localhost:8080/api/upload").
+		AddFile("file1", "E:\\x1.png"). // 文件1
+		AddFile("file2", "E:\\x2.png"). // 文件2
+		AddData("userId", 1).           // 其他参数
+		DoPostFile().AssertStatus(200)
 }
