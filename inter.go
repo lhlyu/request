@@ -3,6 +3,7 @@ package request
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -35,6 +36,9 @@ func (rq *Request) setUrl() {
 	}
 	uUrl.RawQuery = uValues.Encode()
 	rq.r.URL = uUrl
+	rq.handler(func() {
+		fmt.Println("debug | requestUrl:",rq.r.URL.String())
+	})
 	return
 }
 
@@ -53,6 +57,12 @@ func (rq *Request) setCookie() {
 	for _, v := range rq.p.Cookie {
 		rq.r.AddCookie(v)
 	}
+	rq.handler(func() {
+		fmt.Println("debug | headers:")
+		for k, v := range rq.r.Header {
+			fmt.Printf("%s : %s\n",k,v)
+		}
+	})
 	return
 }
 

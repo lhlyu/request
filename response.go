@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type IResponse interface {
@@ -16,6 +17,7 @@ type IResponse interface {
 	IsStatusOk() bool                  // 响应状态码 == 200
 	AssertStatus(status int)           // 断言状态码
 	BodyUnmarshal(v interface{}) error // 数据解析
+	Then(func(resp *http.Response))    // 自定义处理   response
 }
 
 type response struct {
@@ -68,6 +70,12 @@ func (r *response) AssertStatus(status int) {
 
 func (r *response) BodyUnmarshal(v interface{}) error {
 	return json.Unmarshal(r.body, v)
+}
+
+func (r *response) Then(f func(resp *http.Response)) {
+	rsp := r.GetResponse()
+	rsp.Body = ioutil.NopCloser(strings.NewReader(r.GetBody()))
+	f(rsp)
 }
 
 /**
