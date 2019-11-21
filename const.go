@@ -2,7 +2,7 @@ package request
 
 import "time"
 
-const _version = "v1.3.3"
+const _version = "v1.4.0"
 
 const (
 	DURATION                  = time.Second

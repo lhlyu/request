@@ -10,15 +10,17 @@ import (
 )
 
 type IResponse interface {
-	GetRequest() *http.Request         // 获取请求体
-	GetResponse() *http.Response       // 获取响应体
-	GetBody() string                   // 获取body内容
-	GetStatus() int                    // 获取响应状态码
-	IsStatusOk() bool                  // 响应状态码 == 200
-	AssertStatus(status int)           // 断言状态码
-	BodyUnmarshal(v interface{}) error // 数据解析
-	Then(func(resp *http.Response))    // 自定义处理   response
-	Error() error                      // 返回请求错误
+	GetRequest() *http.Request                // 获取请求体
+	GetResponse() *http.Response              // 获取响应体
+	GetBody() string                          // 获取body内容
+	GetStatus() int                           // 获取响应状态码
+	IsStatusOk() bool                         // 响应状态码 == 200
+	AssertStatus(status int)                  // 断言状态码
+	BodyUnmarshal(v interface{}) error        // 数据解析
+	Then(func(resp *http.Response)) IResponse // 自定义处理   response
+	Error() error                             // 返回请求错误
+	OnSuccess(func(resp IResponse)) IResponse // 成功回调
+	OnError(func(resp IResponse)) IResponse   // 失败回调
 }
 
 type response struct {
@@ -79,14 +81,30 @@ func (r *response) BodyUnmarshal(v interface{}) error {
 	return json.Unmarshal(r.body, v)
 }
 
-func (r *response) Then(f func(resp *http.Response)) {
+func (r *response) Then(f func(resp *http.Response)) IResponse {
 	rsp := r.GetResponse()
 	rsp.Body = ioutil.NopCloser(strings.NewReader(r.GetBody()))
 	f(rsp)
+	return r
 }
 
 func (r *response) Error() error {
 	return r.err
+}
+
+func (r *response) OnSuccess(f func(resp IResponse)) IResponse {
+	status := r.GetStatus()
+	if status >= 200 && status < 300 {
+		f(r)
+	}
+	return r
+}
+func (r *response) OnError(f func(resp IResponse)) IResponse {
+	status := r.GetStatus()
+	if status < 200 || status >= 300 {
+		f(r)
+	}
+	return r
 }
 
 /**

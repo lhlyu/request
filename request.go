@@ -1,10 +1,7 @@
 package request
 
 import (
-	"context"
-	"net"
 	"net/http"
-	"time"
 )
 
 type IRequest interface {
@@ -73,25 +70,11 @@ type (
 )
 
 func NewRequest() IRequest {
-	c := &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
-				conn, err := net.DialTimeout(network, addr, DEFAULT_RESPONSE_TIME_OUT)
-				if err != nil {
-					return nil, err
-				}
-				conn.SetDeadline(time.Now().Add(DEFAULT_RESPONSE_TIME_OUT)) // 设置与连接关联的读写期限,0表示不会超时
-				return conn, nil
-			},
-			ResponseHeaderTimeout: DEFAULT_RESPONSE_TIME_OUT, // 响应时间,0表示不会超时
-			DisableCompression:    true,
-			MaxConnsPerHost:       50,
-		},
-	}
+	c := &http.Client{}
 	r := &http.Request{
 		Header: make(http.Header),
 	}
-	t := &http.Transport{}
+
 	p := &Option{
 		Cookie: make([]*Cookie, 0),
 		Param:  make(map[string]string),
@@ -104,7 +87,6 @@ func NewRequest() IRequest {
 	return &Request{
 		c: c,
 		r: r,
-		t: t,
 		p: p,
 		m: GET,
 	}

@@ -37,7 +37,7 @@ func (rq *Request) setUrl() {
 	uUrl.RawQuery = uValues.Encode()
 	rq.r.URL = uUrl
 	rq.handler(func() {
-		fmt.Println("debug | requestUrl:",rq.r.URL.String())
+		fmt.Println("debug | requestUrl:", rq.r.URL.String())
 	})
 	return
 }
@@ -57,10 +57,12 @@ func (rq *Request) setCookie() {
 	for _, v := range rq.p.Cookie {
 		rq.r.AddCookie(v)
 	}
+	// 防止 Accept-Encoding:gzip, deflate, br
+	rq.r.Header.Set("Accept-Encoding", "identity")
 	rq.handler(func() {
 		fmt.Println("debug | headers:")
 		for k, v := range rq.r.Header {
-			fmt.Printf("%s : %s\n",k,v)
+			fmt.Printf("%s : %s\n", k, v)
 		}
 	})
 	return
@@ -80,6 +82,9 @@ func (rq *Request) setFormData() {
 
 func (rq *Request) setTransport() {
 	rq.c.Timeout = rq.getDuration(rq.p.TimeOut)
+	if rq.t == nil {
+		rq.t = &http.Transport{}
+	}
 	if rq.p.Proxy != "" {
 		rq.t.Proxy = func(request *http.Request) (i *url.URL, e error) {
 			return url.Parse(rq.p.Proxy)

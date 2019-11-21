@@ -138,4 +138,31 @@ func f12(){
 	fmt.Println(resp.GetStatus())
 }
 
+func f13(){
+	resp := request.NewRequest().SetHeader(`
+Accept-Encoding:gzip, deflate, br  // 这种头会自动转成  identity
+X-Token:frerf3f3f3f.dfrf3f4f.4f34f3r34r3435
+Connection:keep-alive
+Pragma:no-cache
+Accept:*/*
+`).SetUrl("http://localhost:8080").SetDebug(true).DoGet()
+	fmt.Println(resp.GetStatus())
+	resp.Then(func(resp *http.Response) {
+		bts,_ := ioutil.ReadAll(resp.Body)
+		fmt.Println(string(bts))
+	}).Then(func(resp *http.Response) {
+		fmt.Println(resp.Cookies())
+	}).AssertStatus(0)
+}
+
+func f14(){
+	request.NewRequest().
+		Get("http://localhost:8080/sadadasd", nil).
+		OnSuccess(func(resp request.IResponse) {               // if 200 <= status < 300 then
+			fmt.Println("success:",resp.GetStatus())      
+		}).OnError(func(resp request.IResponse) {              // else then
+			fmt.Println("error:",resp.GetStatus())
+		})
+}
+
 ```
