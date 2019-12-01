@@ -66,16 +66,17 @@ type IRequest interface {
 
 ```go
 type IResponse interface {
-	GetRequest() *http.Request                  // 获取请求体
-	GetResponse() *http.Response                // 获取响应体
-	GetBody() string                            // 获取body内容
-	GetStatus() int                             // 获取响应状态码
-	IsStatusOk() bool                           // 响应状态码 == 200
-	AssertStatus(status int)                    // 断言状态码
-	BodyUnmarshal(v interface{}) error          // 数据解析
-	Then(func(resp *http.Response)) IResponse   // 自定义处理   response
-	Error() error                               // 返回请求错误
-	OnSuccess(func(resp IResponse)) IResponse   // 成功回调
-	OnError(func(resp IResponse)) IResponse     // 失败回调
+	GetRequest() *http.Request                // 获取请求体
+	GetResponse() *http.Response              // 获取响应体
+	GetBody() string                          // 获取body内容
+	GetStatus() int                           // 获取响应状态码
+	IsStatusOk() bool                         // 响应状态码 == 200
+	AssertStatus(status int)                  // 断言状态码
+	BodyUnmarshal(v interface{}) error        // 数据解析
+	Then(func(resp *http.Response)) IResponse // 自定义处理   response
+	Error() error                             // 返回请求错误
+	OnSuccess(func(resp IResponse)) IResponse // 成功回调
+	OnError(func(resp IResponse)) IResponse   // 失败回调
+	BodyCompile(pattern string) []string      // 正则匹配body
 }
 ```

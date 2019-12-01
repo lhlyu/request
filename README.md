@@ -165,4 +165,15 @@ func f14(){
 		})
 }
 
+func f15(){
+	request.NewRequest().
+		SetUrl("https://www.163.com/").
+		DoGet().
+		OnSuccess(func(resp request.IResponse) {
+			imgs := resp.BodyCompile("(https?.*\\.jpg)")
+			for k, v := range imgs {
+				fmt.Println(k,v)
+			}
+	})
+}
 ```

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -21,6 +22,7 @@ type IResponse interface {
 	Error() error                             // 返回请求错误
 	OnSuccess(func(resp IResponse)) IResponse // 成功回调
 	OnError(func(resp IResponse)) IResponse   // 失败回调
+	BodyCompile(pattern string) []string      // 正则匹配body
 }
 
 type response struct {
@@ -105,6 +107,11 @@ func (r *response) OnError(f func(resp IResponse)) IResponse {
 		f(r)
 	}
 	return r
+}
+
+func (r *response) BodyCompile(pattern string) []string {
+	reg := regexp.MustCompile(pattern)
+	return reg.FindAllString(r.GetBody(), -1)
 }
 
 /**

@@ -8,20 +8,21 @@ import (
 )
 
 func main() {
-	f1()
-	f2()
-	f3()
-	f4()
-	f5()
-	f6()
-	f7()
-	f8()
-	f9()
-	f10()
-	f11()
-	f12()
-	f13()
-	f14()
+	//f1()
+	//f2()
+	//f3()
+	//f4()
+	//f5()
+	//f6()
+	//f7()
+	//f8()
+	//f9()
+	//f10()
+	//f11()
+	//f12()
+	//f13()
+	//f14()
+	f15()
 }
 
 func f1() {
@@ -175,4 +176,16 @@ func f14() {
 		}).OnError(func(resp request.IResponse) { // else then
 		fmt.Println("error:", resp.GetStatus())
 	})
+}
+
+func f15() {
+	request.NewRequest().
+		SetUrl("https://www.163.com/").
+		DoGet().
+		OnSuccess(func(resp request.IResponse) {
+			imgs := resp.BodyCompile("(https?.*\\.jpg)")
+			for k, v := range imgs {
+				fmt.Println(k, v)
+			}
+		})
 }
