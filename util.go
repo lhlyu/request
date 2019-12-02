@@ -43,7 +43,7 @@ func strToMSI(s string, strType int) MSI {
 	case _QS:
 		values, _ := url.ParseQuery(s)
 		for k, v := range values {
-			m[k] = v[0]
+			m[k] = strings.Join(v, ",")
 		}
 	case _JSON:
 		if err := json.Unmarshal([]byte(s), &m); err != nil {
