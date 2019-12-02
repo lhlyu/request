@@ -180,7 +180,7 @@ func f14() {
 
 func f15() {
 	request.NewRequest().
-		Get("https://www.163.com/", nil).
+		Get("https://www.163.com", nil).
 		OnSuccess(func(resp request.IResponse) {
 			imgs := resp.BodyCompile("(https?.*\\.jpg)")
 			for k, v := range imgs {

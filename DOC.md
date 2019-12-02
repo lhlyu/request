@@ -78,5 +78,6 @@ type IResponse interface {
 	OnSuccess(func(resp IResponse)) IResponse // 成功回调
 	OnError(func(resp IResponse)) IResponse   // 失败回调
 	BodyCompile(pattern string) []string      // 正则匹配body
+	Print()                                   // 打印请求和响应
 }
 ```

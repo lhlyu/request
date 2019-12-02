@@ -23,21 +23,24 @@ type IResponse interface {
 	OnSuccess(func(resp IResponse)) IResponse // 成功回调
 	OnError(func(resp IResponse)) IResponse   // 失败回调
 	BodyCompile(pattern string) []string      // 正则匹配body
+	Print()                                   // 打印请求和响应
 }
 
 type response struct {
 	resp *http.Response
 	body []byte
+	url  string
 	err  error
 }
 
-func newResponse(resp *http.Response, err error) IResponse {
+func newResponse(resp *http.Response, url string, err error) IResponse {
 	if resp == nil {
 		resp = &http.Response{}
 	}
 	r := &response{
 		resp: resp,
 		body: make([]byte, 0),
+		url:  url,
 		err:  err,
 	}
 	if err != nil {
@@ -112,6 +115,23 @@ func (r *response) OnError(f func(resp IResponse)) IResponse {
 func (r *response) BodyCompile(pattern string) []string {
 	reg := regexp.MustCompile(pattern)
 	return reg.FindAllString(r.GetBody(), -1)
+}
+
+func (r *response) Print() {
+	fmt.Println("Request Header")
+	fmt.Println(r.GetRequest().Method, r.url)
+	for k, v := range r.GetRequest().Header {
+		fmt.Printf("%s : %s\n", k, strings.Join(v, ";"))
+	}
+	fmt.Println()
+
+	fmt.Println("Response Header")
+	for k, v := range r.GetResponse().Header {
+		fmt.Printf("%s : %s\n", k, strings.Join(v, ";"))
+	}
+	fmt.Println()
+	fmt.Println("Response Body")
+	fmt.Println(r.GetBody())
 }
 
 /**

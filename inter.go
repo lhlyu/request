@@ -183,5 +183,5 @@ func (rq *Request) send() IResponse {
 	}
 
 	resp, err := rq.c.Do(rq.r)
-	return newResponse(resp, err)
+	return newResponse(resp, rq.r.URL.String(), err)
 }
