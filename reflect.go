@@ -1,6 +1,7 @@
 package request
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -34,7 +35,14 @@ func toMSS(v interface{}) MSS {
 		return nil
 	}
 	tp := reflect.TypeOf(v)
+	if tp.Kind() == reflect.Ptr {
+		tp = tp.Elem()
+	}
 	switch tp.Kind() {
+	case reflect.Struct:
+		bts, _ := json.Marshal(v)
+		msi := strToMSI(string(bts), _JSON)
+		return toMSS(msi)
 	case reflect.Map:
 		switch data := v.(type) {
 		case MSS:
@@ -63,7 +71,13 @@ func toMSI(v interface{}) MSI {
 		return nil
 	}
 	tp := reflect.TypeOf(v)
+	if tp.Kind() == reflect.Ptr {
+		tp = tp.Elem()
+	}
 	switch tp.Kind() {
+	case reflect.Struct:
+		bts, _ := json.Marshal(v)
+		return strToMSI(string(bts), _JSON)
 	case reflect.Map:
 		switch data := v.(type) {
 		case MSI:
