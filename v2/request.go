@@ -1,141 +1,84 @@
-package v2
+package request
 
 import (
-	"fmt"
+	"github.com/lhlyu/request/v2/v2/impl"
+	"log"
 	"net/http"
 	"net/url"
 )
 
-// 接口实现
-type Request struct {
-	c            *http.Client
-	r            *http.Request
-	t            *http.Transport
-	BaseUrl      string           // 基础url
-	Urls         map[string]bool  // 路由 或 完整请求地址，支持多个
-	Asynch       bool             // 是否异步
-	Timeout      int              // 超时时间 秒
-	Proxy        string           // 代理地址
-	Method       string           // 请求方法
-	Header       *http.Header     // 请求头
-	Cookies      []*http.Cookie   // cookies
-	QueryParam   *url.Values      // url 参数
-	BodyData     interface{}      // body 参数
-	Interceptors func(r IRequest) // 请求拦截器
-	ErrorHandler func(err error)  // 错误处理
+// 接口定义
+type IRequest interface {
+	// 设置基础url
+	SetBaseUrl(s string) IRequest
+	SetBaseUrlf(format string, v ...interface{}) IRequest
+
+	// 设置单个路由
+	SetUrl(s string) IRequest
+	SetUrlf(format string, v ...interface{}) IRequest
+
+	// 设置是否异步
+	SetAsynch(enable bool) IRequest
+
+	// 设置超时(秒)
+	SetTimeout(s int) IRequest
+
+	// 设置代理地址
+	SetProxy(s string) IRequest
+
+	// 设置请求方法
+	SetMethod(method string) IRequest
+
+	// 设置请求头,用法:
+	SetHeader(v interface{}) IRequest
+	// 添加请求头
+	AddHeader(key string, value interface{}) IRequest
+	// 设置内容类型
+	SetContentType(s string) IRequest
+
+	// 添加cookie
+	AddCookie(v *http.Cookie) IRequest
+	// 添加简单cookie
+	AddSimpleCookie(key string, value interface{}) IRequest
+
+	// 设置请求参数,用法:
+	SetQueryParam(v interface{}) IRequest
+	// 添加请求参数
+	AddQueryParam(key string, value interface{}) IRequest
+
+	// 设置body参数,用法:
+	SetBodyData(v interface{}) IRequest
+
+	// 设置请求拦截器
+	SetInterceptors(f func(r IRequest)) IRequest
+
+	// 设置错误处理
+	SetErrorHandler(f func(err error)) IRequest
+
+	// -------------- 自定义 -----------------
+	SetClient(c *http.Client) IRequest
+	SetRequest(r *http.Request) IRequest
+	SetTransport(t *http.Transport) IRequest
+
+	// -------------- 请求 ------------------
+	DoHttp() IResponse
+	DoGet() IResponse
+	DoPost() IResponse
+	Get(format string, v ...interface{}) IResponse
+	Post(apiUrl string, body interface{}) IResponse
 }
 
-func (r *Request) SetBaseUrl(s string) IRequest {
-	r.BaseUrl = s
-	return nil
-}
-
-func (r *Request) SetBaseUrlf(format string, v ...interface{}) IRequest {
-	r.BaseUrl = fmt.Sprintf(format, v...)
-	return nil
-}
-
-func (r *Request) SetUrl(s string) IRequest {
-	r.Urls[s] = true
-	return nil
-}
-
-func (r *Request) SetUrlf(format string, v ...interface{}) IRequest {
-	r.Urls[fmt.Sprintf(format, v...)] = true
-	return nil
-}
-
-func (r *Request) RemoveUrls(ss ...string) IRequest {
-	for _, v := range ss {
-		if _, ok := r.Urls[v]; ok {
-			delete(r.Urls, v)
-		}
+func NewRequest() IRequest {
+	re := &impl.Request{
+		C:          &http.Client{},
+		R:          &http.Request{},
+		T:          &http.Transport{},
+		Method:     GET,
+		Header:     make(http.Header),
+		QueryParam: make(url.Values),
+		ErrorHandler: func(err error) {
+			log.Println(err)
+		},
 	}
-	return nil
-}
-
-func (r *Request) AddUrl(s string) IRequest {
-	r.Urls[s] = true
-	return nil
-}
-
-func (r *Request) AddUrlf(format string, v ...interface{}) IRequest {
-	r.Urls[fmt.Sprintf(format, v...)] = true
-	return nil
-}
-
-func (r *Request) SetUrls(ss ...string) IRequest {
-	for _, v := range ss {
-		r.Urls[v] = true
-	}
-	return nil
-}
-
-func (r *Request) SetAsynch(enable bool) IRequest {
-	r.Asynch = enable
-	return nil
-}
-
-func (r *Request) SetTimeout(s int) IRequest {
-	r.Timeout = s
-	return nil
-}
-
-func (r *Request) SetProxy(s string) IRequest {
-	r.Proxy = s
-	return nil
-}
-
-func (r *Request) SetMethod(method string) IRequest {
-	r.Method = method
-	return nil
-}
-
-func (r *Request) SetHeader(v interface{}) IRequest {
-	// todo
-	return nil
-}
-
-func (r *Request) AddHeader(key string, value interface{}) IRequest {
-	// todo
-	return nil
-}
-
-func (r *Request) SetContentType(s string) IRequest {
-	return r.AddHeader("content-type", s)
-}
-
-func (r *Request) SetCookie(v interface{}) IRequest {
-	// todo
-	return nil
-}
-
-func (r *Request) AddCookie(key string, value interface{}) IRequest {
-	// todo
-	return nil
-}
-
-func (r *Request) SetQueryParam(v interface{}) IRequest {
-	// todo
-	return nil
-}
-
-func (r *Request) AddQueryParam(key string, value interface{}) IRequest {
-	// todo
-	return nil
-}
-
-func (r *Request) SetBodyData(v interface{}) IRequest {
-	r.BodyData = v
-	return nil
-}
-
-func (r *Request) SetInterceptors(f func(r IRequest)) IRequest {
-	r.Interceptors = f
-	return nil
-}
-
-func (r *Request) SetErrorHandler(f func(err error)) IRequest {
-	r.ErrorHandler = f
-	return nil
+	return re
 }
