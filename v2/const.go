@@ -1,4 +1,4 @@
-package request
+package v2
 
 import "time"
 
@@ -11,13 +11,13 @@ const (
 
 // http method
 const (
-	GET    = "GET"
-	POST   = "POST"
-	DELETE = "DELETE"
-	PUT    = "PUT"
-	HEAD   = "HEAD"
-	TRACE  = "TRACE"
-	OPTION = "OPTION"
+	GET     = "GET"
+	POST    = "POST"
+	DELETE  = "DELETE"
+	PUT     = "PUT"
+	HEAD    = "HEAD"
+	TRACE   = "TRACE"
+	OPTIONS = "OPTIONS"
 )
 
 // string type

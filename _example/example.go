@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/lhlyu/request"
+	"github.com/lhlyu/request/v2"
 	"io/ioutil"
 	"net/http"
 )
