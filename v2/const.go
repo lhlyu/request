@@ -1,13 +1,6 @@
 package request
 
-import "time"
-
 const _version = "v2.0.0"
-
-const (
-	DURATION                  = time.Second
-	DEFAULT_RESPONSE_TIME_OUT = DURATION * 5 // 默认超时时间 5s
-)
 
 // http method
 const (
@@ -18,18 +11,6 @@ const (
 	HEAD    = "HEAD"
 	TRACE   = "TRACE"
 	OPTIONS = "OPTIONS"
-)
-
-// string type
-const (
-	_KV_LINE = iota // 行
-	_QS             // queryUrl
-	_JSON           // json
-)
-
-// header key
-const (
-	CONTENT_TYPE = "Content-Type"
 )
 
 // header value
@@ -97,4 +78,19 @@ func main() {
 	}
 	defer response.Body.Close()
 }
+*/
+
+/**
+[request]
+url:
+method:
+
+header:
+  xxx: xxx
+
+cookie:
+  xxx: xxx
+
+body: xxxx
+
 */
