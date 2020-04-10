@@ -13,11 +13,19 @@ type Response struct {
 	resp      *http.Response
 	reqBody   string
 	respBody  string
+	async     bool
 	asyncBody chan string
 	err       error
 }
 
+func (r *Response) check() {
+	if r.async {
+		r.Await()
+	}
+}
+
 func (r *Response) GetRequest() *http.Request {
+	r.check()
 	if r.resp.Body == nil {
 		r.resp.Body = ioutil.NopCloser(strings.NewReader(r.reqBody))
 	}
@@ -25,6 +33,7 @@ func (r *Response) GetRequest() *http.Request {
 }
 
 func (r *Response) GetResponse() *http.Response {
+	r.check()
 	if r.resp.Body == nil {
 		r.resp.Body = ioutil.NopCloser(strings.NewReader(r.respBody))
 	}
@@ -32,10 +41,12 @@ func (r *Response) GetResponse() *http.Response {
 }
 
 func (r *Response) GetBody() string {
+	r.check()
 	return r.respBody
 }
 
 func (r *Response) GetStatus() int {
+	r.check()
 	return r.resp.StatusCode
 }
 
@@ -60,8 +71,12 @@ func (r *Response) BodyCompile(pattern string) []string {
 	return reg.FindAllString(r.GetBody(), -1)
 }
 
-func (r *Response) Await() <-chan string {
-	return r.asyncBody
+func (r *Response) Await() IResponse {
+	if r.async {
+		r.respBody = <-r.asyncBody
+		r.async = false
+	}
+	return r
 }
 
 func (r *Response) Error() error {

@@ -363,6 +363,9 @@ func (r *Request) DoHttp() IResponse {
 		r.errHandler(err)
 		return nil
 	}
+	res.req = r.R
+	res.resp = resp
+	res.reqBody = r.Body
 	res.respBody = string(byts)
 	return res
 }
@@ -391,10 +394,13 @@ func (r *Request) Post(apiUrl string, body string) IResponse {
 // ----------------------- 异步请求
 func (r *Request) Async() IResponse {
 	res := &Response{
+		async:     true,
 		asyncBody: make(chan string, 0),
 	}
 	go func() {
+		defer close(res.asyncBody)
 		if err := r.check(); err != nil {
+			res.err = err
 			r.errHandler(err)
 			return
 		}
@@ -452,6 +458,9 @@ func (r *Request) Async() IResponse {
 			r.errHandler(err)
 			return
 		}
+		res.req = r.R
+		res.resp = resp
+		res.reqBody = r.Body
 		res.asyncBody <- string(byts)
 	}()
 	return res
