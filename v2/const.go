@@ -39,6 +39,9 @@ const (
 // 请求拦截器 interceptors
 // 响应拦截器 interceptors
 
+// 资源下载
+// 文件流操作
+
 /**
 //跳过证书验证
 tr := &http.Transport{
