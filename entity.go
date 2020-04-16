@@ -6,9 +6,6 @@ import (
 	"time"
 )
 
-type Request *http.Request
-type Response *http.Response
-
 type superAgentRetryable struct {
 	RetryableStatus []int
 	RetryerTime     time.Duration

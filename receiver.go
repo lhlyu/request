@@ -1,110 +1,29 @@
 package request
 
-import (
-	"bytes"
-	"encoding/json"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"regexp"
-	"sync"
-)
+import "net/http"
 
-type SuperReceiver struct {
-	Resp *http.Response
-	Body []byte
-	Errs []error
-
-	once sync.Once
-	resp chan *http.Response
-}
-
-func newSuperReceiver(isAsynch bool) *SuperReceiver {
-	resp := &SuperReceiver{}
-	if isAsynch {
-		resp.resp = make(chan *http.Response, 0)
-	}
-	return resp
-}
-
-func (s *SuperReceiver) GetBody() []byte {
-	s.once.Do(func() {
-		if s.Resp == nil {
-			s.Body = nil
-			return
-		}
-		byts, e := ioutil.ReadAll(s.Resp.Body)
-		if e != nil {
-			s.Errs = append(s.Errs, e)
-			return
-		}
-		defer s.Resp.Body.Close()
-		s.Body = byts
-		s.Resp.Body = ioutil.NopCloser(bytes.NewBuffer(byts))
-	})
-	return s.Body
-}
-
-func (s *SuperReceiver) GetBodyString() string {
-	return string(s.GetBody())
-}
-
-func (s *SuperReceiver) BodyUnmarshal(v interface{}) error {
-	return json.Unmarshal(s.GetBody(), v)
-}
-
-func (s *SuperReceiver) BodyCompile(pattern string) []string {
-	reg := regexp.MustCompile(pattern)
-	return reg.FindAllString(s.GetBodyString(), -1)
-}
-
-func (r *SuperReceiver) GetStatus() int {
-	if r.Resp == nil {
-		return -1
-	}
-	return r.Resp.StatusCode
-}
-
-func (s *SuperReceiver) GetResponse() *http.Response {
-	s.Resp.Body = ioutil.NopCloser(bytes.NewBuffer(s.GetBody()))
-	return s.Resp
-}
-
-func (s *SuperReceiver) Await() *SuperReceiver {
-	if v, ok := <-s.resp; ok {
-		s.Resp = v
-	}
-	return s
-}
-
-// 保存文件
-func (s *SuperReceiver) Save(path string) error {
-	byts := s.GetBody()
-	if len(byts) == 0 {
-		return nil
-	}
-	out, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	_, err = io.Copy(out, bytes.NewReader(byts))
-	return err
-}
-
-func (s *SuperReceiver) Error() error {
-	if len(s.Errs) > 0 {
-		return s.Errs[0]
-	}
-	return nil
-}
-
-func (s *SuperReceiver) Errors() []error {
-	return s.Errs
-}
-
-func (s *SuperReceiver) Then(fn func(r *SuperReceiver)) *SuperReceiver {
-	fn(s)
-	return s
+// 响应接口定义
+type Receiver interface {
+	// 获取原生响应体
+	GetResponse() *http.Response
+	// 获取body内容
+	GetBody() []byte
+	// 获取body内容
+	GetBodyString() string
+	// body内容转对象
+	BodyUnmarshal(v interface{}) error
+	// 正则匹配body内容
+	BodyCompile(pattern string) []string
+	// 获取响应状态码，没有则返回 -1
+	GetStatus() int
+	// 异步等待响应结果返回
+	Await() Receiver
+	// 流保存到文件
+	Save(path string) error
+	// 后续操作
+	Then(fn func(r Receiver)) Receiver
+	// 获取最后一个错误
+	Error() error
+	// 获取所有错误
+	Errors() []error
 }

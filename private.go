@@ -162,7 +162,7 @@ func (s *SuperAgent) queryMap(content interface{}) *SuperAgent {
 	return s.queryStruct(content)
 }
 
-func (s *SuperAgent) isRetryableRequest(resp Response) bool {
+func (s *SuperAgent) isRetryableRequest(resp *http.Response) bool {
 	if s.Retryable.Enable && s.Retryable.Attempt < s.Retryable.RetryerCount && contains(resp.StatusCode, s.Retryable.RetryableStatus) {
 		time.Sleep(s.Retryable.RetryerTime)
 		s.Retryable.Attempt++
@@ -318,11 +318,11 @@ func (s *SuperAgent) makeRequest() (*http.Request, error) {
 	return req, nil
 }
 
-func (s *SuperAgent) getResponseBytes() (Response, []error) {
+func (s *SuperAgent) getResponseBytes() (*http.Response, []error) {
 	var (
 		req  *http.Request
 		err  error
-		resp Response
+		resp *http.Response
 	)
 	if len(s.Errors) != 0 {
 		return nil, s.Errors

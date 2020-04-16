@@ -8,16 +8,14 @@ import (
 const (
 	avatarUrl = "https://avatars1.githubusercontent.com/u/41979509?v=4"
 	apiUrl    = "https://api.github.com/users/lhlyu"
+	picUrl    = "https://cdn.jsdelivr.net/gh/lhlyu/pb@master/b/43.jpg"
 )
 
 func TestNew(t *testing.T) {
 	request.New().
 		Debug().
-		Get("https://cdn.jsdelivr.net/gh/lhlyu/pb@master/b/43.jpg").
+		Get(apiUrl).
 		Then(func(r *request.SuperReceiver) {
-			e := r.Save("./43.jpg")
-			if e != nil {
-				t.Log(e)
-			}
+			t.Log(r.GetBodyString())
 		})
 }
