@@ -25,10 +25,8 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -45,7 +43,64 @@ import (
 
 var DisableTransportSwap = false
 
-func New() *SuperAgent {
+// ------------------ 定义SuperAgent 实现 Agent 接口 ---------------------
+type SuperAgent struct {
+	// 请求url
+	Url string
+	// 请求方法
+	Method string
+	// 请求头
+	Header     http.Header
+	TargetType string
+	ForceType  string
+	Data       map[string]interface{}
+	// 优先级 大于 Data
+	SliceData []interface{}
+	// url参数
+	QueryData url.Values
+	// 文件
+	FileData []SuperFile
+	// 是否将send的内容反射到 queryUrl
+	BounceToRawString bool
+
+	RawString string
+	Client    *http.Client
+	Transport *http.Transport
+	Cookies   []*http.Cookie
+	Errors    []error
+	BasicAuth struct{ Username, Password string }
+	// 是否打印curl命令
+	isCurl bool
+	// 重试设置
+	Retryable superAgentRetryable
+
+	DoNotClearSuperAgent bool
+	// 是否开启debug
+	isDebug bool
+	// 标识，是否是克隆
+	isClone bool
+	// 是否异步
+	isAsynch bool
+}
+
+// 请求重试设置
+type superAgentRetryable struct {
+	RetryableStatus []int
+	RetryerTime     time.Duration
+	RetryerCount    int
+	Attempt         int
+	Enable          bool
+}
+
+// 上传文件
+type SuperFile struct {
+	Filename  string
+	Fieldname string
+	Data      []byte
+}
+
+// 新建
+func New() Agent {
 	cookiejarOptions := cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	}
@@ -60,7 +115,7 @@ func New() *SuperAgent {
 		RawString:         "",
 		SliceData:         []interface{}{},
 		QueryData:         url.Values{},
-		FileData:          make([]File, 0),
+		FileData:          make([]SuperFile, 0),
 		BounceToRawString: false,
 		Client:            &http.Client{Jar: jar},
 		Transport:         &http.Transport{},
@@ -68,19 +123,22 @@ func New() *SuperAgent {
 		Errors:            nil,
 		BasicAuth:         struct{ Username, Password string }{},
 		isDebug:           debug,
-		CurlCommand:       false,
-		logger:            log.New(os.Stderr, "[gorequest]", log.LstdFlags),
+		isCurl:            false,
 		isClone:           false,
 		isAsynch:          false,
-		errHandler: func(e error) {
-			log.Println(e.Error())
-		},
 	}
 	s.Transport.DisableKeepAlives = true
 	return s
 }
 
-func (s *SuperAgent) Clone() *SuperAgent {
+// --------------- 实现Agent接口 ------------------
+
+func (s *SuperAgent) Debug() Agent {
+	s.isDebug = true
+	return s
+}
+
+func (s *SuperAgent) Clone() Agent {
 	clone := &SuperAgent{
 		Url:                  s.Url,
 		Method:               s.Method,
@@ -99,70 +157,53 @@ func (s *SuperAgent) Clone() *SuperAgent {
 		Errors:               shallowCopyErrors(s.Errors),
 		BasicAuth:            s.BasicAuth,
 		isDebug:              s.isDebug,
-		CurlCommand:          s.CurlCommand,
-		logger:               s.logger,
+		isCurl:               s.isCurl,
 		Retryable:            copyRetryable(s.Retryable),
 		DoNotClearSuperAgent: true,
 		isClone:              true,
 		isAsynch:             s.isAsynch,
-		errHandler:           s.errHandler,
 	}
 	return clone
 }
 
-func (s *SuperAgent) Timeout(timeout time.Duration) *SuperAgent {
+func (s *SuperAgent) Timeout(timeout time.Duration) Agent {
 	s.safeModifyHttpClient()
 	s.Client.Timeout = timeout
 	return s
 }
 
-func (s *SuperAgent) SetErrHandler(fn func(e error)) *SuperAgent {
-	s.errHandler = fn
+func (s *SuperAgent) Curl() Agent {
+	s.isCurl = true
 	return s
 }
 
-func (s *SuperAgent) Debug() *SuperAgent {
-	s.isDebug = true
-	return s
-}
-
-func (s *SuperAgent) SetCurlCommand(enable bool) *SuperAgent {
-	s.CurlCommand = enable
-	return s
-}
-
-func (s *SuperAgent) Asynch() *SuperAgent {
+func (s *SuperAgent) Asynch() Agent {
 	s.isAsynch = true
 	return s
 }
 
 // 每次请求前都清除上一次的数据
-func (s *SuperAgent) SetDoNotClearSuperAgent(enable bool) *SuperAgent {
+func (s *SuperAgent) SetDoNotClearSuperAgent(enable bool) Agent {
 	s.DoNotClearSuperAgent = enable
 	return s
 }
 
-func (s *SuperAgent) SetLogger(logger Logger) *SuperAgent {
-	s.logger = logger
-	return s
-}
-
-func (s *SuperAgent) SetHeader(param string, value string) *SuperAgent {
+func (s *SuperAgent) SetHeader(param string, value string) Agent {
 	s.Header.Set(param, value)
 	return s
 }
 
-func (s *SuperAgent) AppendHeader(param string, value string) *SuperAgent {
+func (s *SuperAgent) AddHeader(param string, value string) Agent {
 	s.Header.Add(param, value)
 	return s
 }
 
 // 设置重试 重试次数，重试等待时间 期望状态码
-func (s *SuperAgent) Retry(retryerCount int, retryerTime time.Duration, statusCode ...int) *SuperAgent {
+func (s *SuperAgent) Retry(retryerCount int, retryerTime time.Duration, statusCode ...int) Agent {
 	for _, code := range statusCode {
 		statusText := http.StatusText(code)
 		if len(statusText) == 0 {
-			s.Errors = append(s.Errors, errors.New("StatusCode '"+strconv.Itoa(code)+"' doesn't exist in http package"))
+			s.Errors = append(s.Errors, e("Retry func: ", error_status_not_exist, code))
 		}
 	}
 
@@ -182,17 +223,17 @@ func (s *SuperAgent) Retry(retryerCount int, retryerTime time.Duration, statusCo
 	return s
 }
 
-func (s *SuperAgent) SetBasicAuth(username string, password string) *SuperAgent {
+func (s *SuperAgent) SetBasicAuth(username string, password string) Agent {
 	s.BasicAuth = struct{ Username, Password string }{username, password}
 	return s
 }
 
-func (s *SuperAgent) AddCookie(c *http.Cookie) *SuperAgent {
+func (s *SuperAgent) AddCookie(c *http.Cookie) Agent {
 	s.Cookies = append(s.Cookies, c)
 	return s
 }
 
-func (s *SuperAgent) AddSimpleCookie(name, val string) *SuperAgent {
+func (s *SuperAgent) AddSimpleCookie(name, val string) Agent {
 	s.Cookies = append(s.Cookies, &http.Cookie{
 		Name:  name,
 		Value: val,
@@ -200,21 +241,21 @@ func (s *SuperAgent) AddSimpleCookie(name, val string) *SuperAgent {
 	return s
 }
 
-func (s *SuperAgent) AddCookies(cookies []*http.Cookie) *SuperAgent {
+func (s *SuperAgent) AddCookies(cookies []*http.Cookie) Agent {
 	s.Cookies = append(s.Cookies, cookies...)
 	return s
 }
 
-func (s *SuperAgent) Type(typeStr string) *SuperAgent {
+func (s *SuperAgent) Type(typeStr string) Agent {
 	if _, ok := Types[typeStr]; ok {
 		s.ForceType = typeStr
 	} else {
-		s.Errors = append(s.Errors, errors.New("Type func: incorrect type \""+typeStr+"\""))
+		s.Errors = append(s.Errors, e("Type func: ", error_type_not_support))
 	}
 	return s
 }
 
-func (s *SuperAgent) Query(content interface{}) *SuperAgent {
+func (s *SuperAgent) Query(content interface{}) Agent {
 	switch v := reflect.ValueOf(content); v.Kind() {
 	case reflect.String:
 		s.queryString(v.String())
@@ -227,19 +268,19 @@ func (s *SuperAgent) Query(content interface{}) *SuperAgent {
 	return s
 }
 
-func (s *SuperAgent) AddParam(key string, value string) *SuperAgent {
+func (s *SuperAgent) AddParam(key string, value string) Agent {
 	s.QueryData.Add(key, value)
 	return s
 }
 
 // 传输层安全协议配置 http2
-func (s *SuperAgent) TLSClientConfig(config *tls.Config) *SuperAgent {
+func (s *SuperAgent) TLSClientConfig(config *tls.Config) Agent {
 	s.safeModifyTransport()
 	s.Transport.TLSClientConfig = config
 	return s
 }
 
-func (s *SuperAgent) Proxy(proxyUrl string) *SuperAgent {
+func (s *SuperAgent) Proxy(proxyUrl string) Agent {
 	parsedProxyUrl, err := url.Parse(proxyUrl)
 	if err != nil {
 		s.Errors = append(s.Errors, err)
@@ -254,7 +295,7 @@ func (s *SuperAgent) Proxy(proxyUrl string) *SuperAgent {
 }
 
 // 重定向策略设置
-func (s *SuperAgent) RedirectPolicy(policy func(req *http.Request, via []*http.Request) error) *SuperAgent {
+func (s *SuperAgent) RedirectPolicy(policy func(req *http.Request, via []*http.Request) error) Agent {
 	s.safeModifyHttpClient()
 	s.Client.CheckRedirect = func(r *http.Request, v []*http.Request) error {
 		vv := make([]*http.Request, len(v))
@@ -266,7 +307,7 @@ func (s *SuperAgent) RedirectPolicy(policy func(req *http.Request, via []*http.R
 	return s
 }
 
-func (s *SuperAgent) Send(content interface{}) *SuperAgent {
+func (s *SuperAgent) Send(content interface{}) Agent {
 	switch v := reflect.ValueOf(content); v.Kind() {
 	case reflect.String:
 		s.SendString(v.String())
@@ -296,16 +337,16 @@ func (s *SuperAgent) Send(content interface{}) *SuperAgent {
 	return s
 }
 
-func (s *SuperAgent) SendSlice(content []interface{}) *SuperAgent {
+func (s *SuperAgent) SendSlice(content []interface{}) Agent {
 	s.SliceData = append(s.SliceData, content...)
 	return s
 }
 
-func (s *SuperAgent) SendMap(content interface{}) *SuperAgent {
+func (s *SuperAgent) SendMap(content interface{}) Agent {
 	return s.SendStruct(content)
 }
 
-func (s *SuperAgent) SendStruct(content interface{}) *SuperAgent {
+func (s *SuperAgent) SendStruct(content interface{}) Agent {
 	if marshalContent, err := json.Marshal(content); err != nil {
 		s.Errors = append(s.Errors, err)
 	} else {
@@ -323,7 +364,7 @@ func (s *SuperAgent) SendStruct(content interface{}) *SuperAgent {
 	return s
 }
 
-func (s *SuperAgent) SendString(content string) *SuperAgent {
+func (s *SuperAgent) SendString(content string) Agent {
 	if !s.BounceToRawString {
 		var val interface{}
 		d := json.NewDecoder(strings.NewReader(content))
@@ -366,7 +407,7 @@ func (s *SuperAgent) SendString(content string) *SuperAgent {
 	return s
 }
 
-func (s *SuperAgent) SendFile(file interface{}, args ...string) *SuperAgent {
+func (s *SuperAgent) SendFile(file interface{}, args ...string) Agent {
 
 	filename := ""
 	fieldname := "file"
@@ -397,7 +438,7 @@ func (s *SuperAgent) SendFile(file interface{}, args ...string) *SuperAgent {
 			s.Errors = append(s.Errors, err)
 			return s
 		}
-		s.FileData = append(s.FileData, File{
+		s.FileData = append(s.FileData, SuperFile{
 			Filename:  filename,
 			Fieldname: fieldname,
 			Data:      data,
@@ -407,7 +448,7 @@ func (s *SuperAgent) SendFile(file interface{}, args ...string) *SuperAgent {
 		if filename == "" {
 			filename = "filename"
 		}
-		f := File{
+		f := SuperFile{
 			Filename:  filename,
 			Fieldname: fieldname,
 			Data:      make([]byte, len(slice)),
@@ -435,7 +476,7 @@ func (s *SuperAgent) SendFile(file interface{}, args ...string) *SuperAgent {
 				s.Errors = append(s.Errors, err)
 				return s
 			}
-			s.FileData = append(s.FileData, File{
+			s.FileData = append(s.FileData, SuperFile{
 				Filename:  filename,
 				Fieldname: fieldname,
 				Data:      data,
@@ -443,7 +484,7 @@ func (s *SuperAgent) SendFile(file interface{}, args ...string) *SuperAgent {
 			return s
 		}
 
-		s.Errors = append(s.Errors, errors.New("SendFile currently only supports either a string (path/to/file), a slice of bytes (file content itself), or a os.File!"))
+		s.Errors = append(s.Errors, e("SendFile func: ", error_file_type_not_support))
 	}
 
 	return s
@@ -486,48 +527,6 @@ func (s *SuperAgent) Patch(targetUrl string, a ...interface{}) Receiver {
 
 func (s *SuperAgent) Options(targetUrl string, a ...interface{}) Receiver {
 	return s.Http(OPTIONS, targetUrl, a...)
-}
-
-// 统一请求
-func (s *SuperAgent) do() Receiver {
-	res := newSuperReceiver(s.isAsynch)
-	var (
-		errs []error
-		resp *http.Response
-	)
-	if s.isAsynch {
-		go func() {
-			for {
-				resp, errs = s.getResponseBytes()
-				if errs != nil {
-					break
-				}
-				// 是否可以重试请求，设置重试的次数
-				if s.isRetryableRequest(resp) {
-					resp.Header.Set("Retry-Count", strconv.Itoa(s.Retryable.Attempt))
-					break
-				}
-			}
-			res.resp <- resp
-			res.Errs = append(res.Errs, errs...)
-		}()
-		return res
-	}
-
-	for {
-		resp, errs = s.getResponseBytes()
-		if errs != nil {
-			break
-		}
-		// 是否可以重试请求，设置重试的次数
-		if s.isRetryableRequest(resp) {
-			resp.Header.Set("Retry-Count", strconv.Itoa(s.Retryable.Attempt))
-			break
-		}
-	}
-	res.Resp = resp
-	res.Errs = append(res.Errs, errs...)
-	return res
 }
 
 func (s *SuperAgent) AsCurlCommand() (string, error) {

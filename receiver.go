@@ -18,10 +18,12 @@ type Receiver interface {
 	GetStatus() int
 	// 异步等待响应结果返回
 	Await() Receiver
-	// 流保存到文件
-	Save(path string) error
+	// 保存到文件
+	Save(fl interface{}) error
 	// 后续操作
 	Then(fn func(r Receiver)) Receiver
+	// 停止后续操作
+	Stop()
 	// 获取最后一个错误
 	Error() error
 	// 获取所有错误

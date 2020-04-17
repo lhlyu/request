@@ -3,9 +3,9 @@ package request
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"moul.io/http2curl"
 	"net/http"
@@ -17,75 +17,7 @@ import (
 	"time"
 )
 
-func cloneMapArray(old map[string][]string) map[string][]string {
-	newMap := make(map[string][]string, len(old))
-	for k, vals := range old {
-		newMap[k] = make([]string, len(vals))
-		for i := range vals {
-			newMap[k][i] = vals[i]
-		}
-	}
-	return newMap
-}
-func shallowCopyData(old map[string]interface{}) map[string]interface{} {
-	if old == nil {
-		return nil
-	}
-	newData := make(map[string]interface{})
-	for k, val := range old {
-		newData[k] = val
-	}
-	return newData
-}
-func shallowCopyDataSlice(old []interface{}) []interface{} {
-	if old == nil {
-		return nil
-	}
-	newData := make([]interface{}, len(old))
-	for i := range old {
-		newData[i] = old[i]
-	}
-	return newData
-}
-func shallowCopyFileArray(old []File) []File {
-	if old == nil {
-		return nil
-	}
-	newData := make([]File, len(old))
-	for i := range old {
-		newData[i] = old[i]
-	}
-	return newData
-}
-func shallowCopyCookies(old []*http.Cookie) []*http.Cookie {
-	if old == nil {
-		return nil
-	}
-	newData := make([]*http.Cookie, len(old))
-	for i := range old {
-		newData[i] = old[i]
-	}
-	return newData
-}
-func shallowCopyErrors(old []error) []error {
-	if old == nil {
-		return nil
-	}
-	newData := make([]error, len(old))
-	for i := range old {
-		newData[i] = old[i]
-	}
-	return newData
-}
-
-func copyRetryable(old superAgentRetryable) superAgentRetryable {
-	newRetryable := old
-	newRetryable.RetryableStatus = make([]int, len(old.RetryableStatus))
-	for i := range old.RetryableStatus {
-		newRetryable.RetryableStatus[i] = old.RetryableStatus[i]
-	}
-	return newRetryable
-}
+// ------------------- SuperAgent 私有方法 --------------
 
 func (s *SuperAgent) clearSuperAgent() {
 	if s.DoNotClearSuperAgent {
@@ -97,7 +29,7 @@ func (s *SuperAgent) clearSuperAgent() {
 	s.Data = make(map[string]interface{})
 	s.SliceData = []interface{}{}
 	s.QueryData = url.Values{}
-	s.FileData = make([]File, 0)
+	s.FileData = make([]SuperFile, 0)
 	s.BounceToRawString = false
 	s.RawString = ""
 	s.ForceType = ""
@@ -171,6 +103,48 @@ func (s *SuperAgent) isRetryableRequest(resp *http.Response) bool {
 	return true
 }
 
+// 统一请求
+func (s *SuperAgent) do() Receiver {
+	res := newSuperReceiver(s.isAsynch)
+	var (
+		errs []error
+		resp *http.Response
+	)
+	if s.isAsynch {
+		go func() {
+			for {
+				resp, errs = s.getResponseBytes()
+				if errs != nil {
+					break
+				}
+				// 是否可以重试请求，设置重试的次数
+				if s.isRetryableRequest(resp) {
+					resp.Header.Set("Retry-Count", strconv.Itoa(s.Retryable.Attempt))
+					break
+				}
+			}
+			res.Errs = append(res.Errs, errs...)
+			res.resp <- resp
+		}()
+		return res
+	}
+
+	for {
+		resp, errs = s.getResponseBytes()
+		if errs != nil {
+			break
+		}
+		// 是否可以重试请求，设置重试的次数
+		if s.isRetryableRequest(resp) {
+			resp.Header.Set("Retry-Count", strconv.Itoa(s.Retryable.Attempt))
+			break
+		}
+	}
+	res.Errs = append(res.Errs, errs...)
+	res.Resp = resp
+	return res
+}
+
 func (s *SuperAgent) makeRequest() (*http.Request, error) {
 	var (
 		req           *http.Request
@@ -180,7 +154,7 @@ func (s *SuperAgent) makeRequest() (*http.Request, error) {
 	)
 
 	if s.Method == "" {
-		return nil, errors.New("No method specified")
+		return nil, e("", error_no_method_specified)
 	}
 
 	switch s.TargetType {
@@ -278,7 +252,7 @@ func (s *SuperAgent) makeRequest() (*http.Request, error) {
 			contentType = mw.FormDataContentType()
 		}
 	default:
-		return nil, errors.New("TargetType '" + s.TargetType + "' could not be determined")
+		return nil, e("", error_target_type_not_be_determined, s.TargetType)
 	}
 
 	if req, err = http.NewRequest(s.Method, s.Url, contentReader); err != nil {
@@ -355,21 +329,21 @@ func (s *SuperAgent) getResponseBytes() (*http.Response, []error) {
 
 	if s.isDebug {
 		dump, err := httputil.DumpRequest(req, true)
-		s.logger.SetPrefix("[http] ")
+		log.SetPrefix("[http request] ")
 		if err != nil {
-			s.logger.Println("Error:", err)
+			log.Println("Error:", err)
 		} else {
-			s.logger.Printf("HTTP Request: %s", string(dump))
+			log.Print(string(dump))
 		}
 	}
 
-	if s.CurlCommand {
+	if s.isCurl {
 		curl, err := http2curl.GetCurlCommand(req)
-		s.logger.SetPrefix("[curl] ")
+		log.SetPrefix("[curl] ")
 		if err != nil {
-			s.logger.Println("Error:", err)
+			log.Println("Error:", err)
 		} else {
-			s.logger.Printf("CURL command line: %s", curl)
+			log.Printf("CURL command line: %s", curl)
 		}
 	}
 	resp, err = s.Client.Do(req)
@@ -380,10 +354,11 @@ func (s *SuperAgent) getResponseBytes() (*http.Response, []error) {
 
 	if s.isDebug {
 		dump, err := httputil.DumpResponse(resp, true)
+		log.SetPrefix("[http response] ")
 		if err != nil {
-			s.logger.Println("Error:", err)
+			log.Println("Error:", err)
 		} else {
-			s.logger.Printf("HTTP Response: %s", string(dump))
+			log.Print(string(dump))
 		}
 	}
 

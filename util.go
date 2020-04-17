@@ -2,10 +2,81 @@ package request
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
 )
+
+func cloneMapArray(old map[string][]string) map[string][]string {
+	newMap := make(map[string][]string, len(old))
+	for k, vals := range old {
+		newMap[k] = make([]string, len(vals))
+		for i := range vals {
+			newMap[k][i] = vals[i]
+		}
+	}
+	return newMap
+}
+func shallowCopyData(old map[string]interface{}) map[string]interface{} {
+	if old == nil {
+		return nil
+	}
+	newData := make(map[string]interface{})
+	for k, val := range old {
+		newData[k] = val
+	}
+	return newData
+}
+func shallowCopyDataSlice(old []interface{}) []interface{} {
+	if old == nil {
+		return nil
+	}
+	newData := make([]interface{}, len(old))
+	for i := range old {
+		newData[i] = old[i]
+	}
+	return newData
+}
+func shallowCopyFileArray(old []SuperFile) []SuperFile {
+	if old == nil {
+		return nil
+	}
+	newData := make([]SuperFile, len(old))
+	for i := range old {
+		newData[i] = old[i]
+	}
+	return newData
+}
+func shallowCopyCookies(old []*http.Cookie) []*http.Cookie {
+	if old == nil {
+		return nil
+	}
+	newData := make([]*http.Cookie, len(old))
+	for i := range old {
+		newData[i] = old[i]
+	}
+	return newData
+}
+func shallowCopyErrors(old []error) []error {
+	if old == nil {
+		return nil
+	}
+	newData := make([]error, len(old))
+	for i := range old {
+		newData[i] = old[i]
+	}
+	return newData
+}
+
+func copyRetryable(old superAgentRetryable) superAgentRetryable {
+	newRetryable := old
+	newRetryable.RetryableStatus = make([]int, len(old.RetryableStatus))
+	for i := range old.RetryableStatus {
+		newRetryable.RetryableStatus[i] = old.RetryableStatus[i]
+	}
+	return newRetryable
+}
 
 func makeSliceOfReflectValue(v reflect.Value) (slice []interface{}) {
 

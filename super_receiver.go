@@ -18,6 +18,8 @@ type SuperReceiver struct {
 
 	once sync.Once
 	resp chan *http.Response
+
+	stop bool
 }
 
 func newSuperReceiver(isAsynch bool) *SuperReceiver {
@@ -79,22 +81,42 @@ func (s *SuperReceiver) Await() Receiver {
 }
 
 // 保存文件
-func (s *SuperReceiver) Save(path string) error {
+func (s *SuperReceiver) Save(fl interface{}) error {
+	var (
+		out io.WriteCloser
+		err error
+	)
+
+	switch val := fl.(type) {
+	case string:
+		out, err = os.Create(val)
+		if err != nil {
+			return err
+		}
+	case *os.File:
+		out = val
+	case io.WriteCloser:
+		out = val
+	default:
+		return e("Save func: ", error_type_not_support)
+	}
 	byts := s.GetBody()
 	if len(byts) == 0 {
 		return nil
-	}
-	out, err := os.Create(path)
-	if err != nil {
-		return err
 	}
 	defer out.Close()
 	_, err = io.Copy(out, bytes.NewReader(byts))
 	return err
 }
 
+func (s *SuperReceiver) Stop() {
+	s.stop = true
+}
+
 func (s *SuperReceiver) Then(fn func(r Receiver)) Receiver {
-	fn(s)
+	if !s.stop {
+		fn(s)
+	}
 	return s
 }
 
